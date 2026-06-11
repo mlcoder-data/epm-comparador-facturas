@@ -768,45 +768,80 @@ function updateDashboardUI() {
     const latest = invoiceHistory[invoiceHistory.length - 1];
     const prev = invoiceHistory[invoiceHistory.length - 2];
 
+    // ── Hero total ────────────────────────────────────────────────────────
     if (el.kpiTotalFactura) el.kpiTotalFactura.innerText = formatCOP(latest.total);
-    if (el.kpiEnergiaCost) el.kpiEnergiaCost.innerText = formatCOP(latest.energia);
-    if (el.kpiEnergiaConsumo) el.kpiEnergiaConsumo.innerText = `${latest.kwh} kWh`;
-    if (el.kpiAguaCost) el.kpiAguaCost.innerText = formatCOP(latest.agua);
-    if (el.kpiAguaConsumo) el.kpiAguaConsumo.innerText = `${latest.agua_m3} m³`;
-    if (el.kpiGasCost) el.kpiGasCost.innerText = formatCOP(latest.gas);
-    if (el.kpiGasConsumo) el.kpiGasConsumo.innerText = `${latest.gas_m3} m³`;
 
-    // ── Semáforo en cada KPI card ─────────────────────────────────────────
-    function setSemaforo(cardId, curr, prevVal) {
+    const heroLabel = document.getElementById("total-hero-periodo");
+    if (heroLabel) heroLabel.innerText = `Factura ${latest.mes}`;
+
+    // ── Semáforo + trend en cada KPI card ─────────────────────────────────
+    function setSemaforo(cardId, trendId, curr, prevVal) {
         const card = document.getElementById(cardId);
-        if (!card || !prevVal || !curr) return;
-        const pct = ((curr - prevVal) / prevVal) * 100;
+        const trendEl = document.getElementById(trendId);
+        if (!card) return;
         card.classList.remove("kpi-red","kpi-yellow","kpi-green");
-        const footer = card.querySelector(".kpi-footer .trend-indicator");
+        if (!prevVal || !curr) {
+            if (trendEl) { trendEl.innerHTML = `<i data-lucide="minus"></i> —`; trendEl.className = "trend-indicator neutral"; }
+            return;
+        }
+        const pct = ((curr - prevVal) / prevVal) * 100;
         const sign = pct >= 0 ? "+" : "";
         const absPct = Math.abs(pct).toFixed(1);
         const diffCOP = curr - prevVal;
-
         if (pct >= 10) {
             card.classList.add("kpi-red");
-            if (footer) footer.innerHTML = `<i data-lucide="arrow-up-right"></i> ${sign}${absPct}% (${formatCOP(diffCOP)})`;
-            if (footer) footer.className = "trend-indicator up";
+            if (trendEl) { trendEl.innerHTML = `<i data-lucide="arrow-up-right"></i> ${sign}${absPct}% (${formatCOP(diffCOP)})`; trendEl.className = "trend-indicator up"; }
         } else if (pct >= 3) {
             card.classList.add("kpi-yellow");
-            if (footer) footer.innerHTML = `<i data-lucide="arrow-up-right"></i> ${sign}${absPct}% (${formatCOP(diffCOP)})`;
-            if (footer) footer.className = "trend-indicator up";
+            if (trendEl) { trendEl.innerHTML = `<i data-lucide="arrow-up-right"></i> ${sign}${absPct}% (${formatCOP(diffCOP)})`; trendEl.className = "trend-indicator up"; }
         } else if (pct <= -3) {
             card.classList.add("kpi-green");
-            if (footer) footer.innerHTML = `<i data-lucide="arrow-down-right"></i> ${absPct}% (${formatCOP(diffCOP)})`;
-            if (footer) footer.className = "trend-indicator down";
+            if (trendEl) { trendEl.innerHTML = `<i data-lucide="arrow-down-right"></i> −${absPct}% (${formatCOP(diffCOP)})`; trendEl.className = "trend-indicator down"; }
         } else {
-            if (footer) footer.innerHTML = `<i data-lucide="minus"></i> Sin cambio significativo`;
-            if (footer) footer.className = "trend-indicator neutral";
+            if (trendEl) { trendEl.innerHTML = `<i data-lucide="minus"></i> Sin cambio`; trendEl.className = "trend-indicator neutral"; }
         }
     }
-    setSemaforo("kpi-card-energia", latest.energia, prev.energia);
-    setSemaforo("kpi-card-agua",    latest.agua,    prev.agua);
-    setSemaforo("kpi-card-gas",     latest.gas,     prev.gas);
+
+    if (el.kpiEnergiaCost) el.kpiEnergiaCost.innerText = formatCOP(latest.energia);
+    if (el.kpiEnergiaConsumo) el.kpiEnergiaConsumo.innerText = `${latest.kwh || "—"} kWh`;
+    setSemaforo("kpi-card-energia","kpi-energia-trend", latest.energia, prev.energia);
+
+    if (el.kpiAguaCost) el.kpiAguaCost.innerText = formatCOP(latest.agua);
+    if (el.kpiAguaConsumo) el.kpiAguaConsumo.innerText = `${latest.agua_m3 || "—"} m³`;
+    setSemaforo("kpi-card-agua","kpi-agua-trend", latest.agua, prev.agua);
+
+    if (el.kpiGasCost) el.kpiGasCost.innerText = formatCOP(latest.gas);
+    if (el.kpiGasConsumo) el.kpiGasConsumo.innerText = `${latest.gas_m3 || "—"} m³`;
+    setSemaforo("kpi-card-gas","kpi-gas-trend", latest.gas, prev.gas);
+
+    // ── Comparación lado a lado en hero ────────────────────────────────────
+    const sideCompare = document.getElementById("side-compare");
+    if (sideCompare) {
+        const diffTotal = latest.total - prev.total;
+        const absDiff = Math.abs(diffTotal);
+        const pctTotal = ((diffTotal / prev.total) * 100).toFixed(1);
+        const isUp = diffTotal >= 0;
+        const diffClass = isUp ? "compare-diff-up" : "compare-diff-down";
+        const arrow = isUp ? "▲" : "▼";
+        const sign = isUp ? "+" : "−";
+
+        sideCompare.innerHTML = `
+            <div class="compare-months">
+                <div class="compare-month">
+                    <span class="compare-month-label">${prev.mes}</span>
+                    <span class="compare-month-val">${formatCOP(prev.total)}</span>
+                </div>
+                <div class="compare-arrow ${diffClass}">${arrow}</div>
+                <div class="compare-month">
+                    <span class="compare-month-label">${latest.mes}</span>
+                    <span class="compare-month-val compare-current">${formatCOP(latest.total)}</span>
+                </div>
+            </div>
+            <div class="compare-summary ${diffClass}">
+                ${sign} ${formatCOP(absDiff)} &nbsp;·&nbsp; ${sign}${Math.abs(parseFloat(pctTotal))}% vs mes anterior
+            </div>
+        `;
+    }
 
     // Percentage difference
     const diffPercent = ((latest.total - prev.total) / prev.total * 100).toFixed(1);

@@ -136,78 +136,8 @@
 
                 <!-- TAB: RESUMEN -->
                 <section id="tab-resumen" class="tab-content active">
-                    <!-- KPI Cards Grid -->
-                    <div class="kpi-grid">
-                        <div class="kpi-card highlight">
-                            <div class="kpi-header">
-                                <span>Factura Actual (Mayo 2026)</span>
-                                <div class="kpi-icon"><i data-lucide="receipt"></i></div>
-                            </div>
-                            <div class="kpi-value" id="kpi-total-factura">$198,500</div>
-                            <div class="kpi-change bad">
-                                <i data-lucide="trending-up"></i>
-                                <span>+8.9% respecto a Abril ($182,300)</span>
-                            </div>
-                        </div>
-                        <div class="kpi-card" id="kpi-card-energia">
-                            <div class="kpi-header">
-                                <span>Energía (Luz)</span>
-                                <div class="kpi-icon yellow"><i data-lucide="zap"></i></div>
-                            </div>
-                            <div class="kpi-value" id="kpi-energia-cost">$93,500</div>
-                            <div class="kpi-footer">
-                                <span id="kpi-energia-consumo">110 kWh</span>
-                                <span class="divider">•</span>
-                                <span class="trend-indicator up"><i data-lucide="arrow-up-right"></i> +5%</span>
-                            </div>
-                        </div>
-                        <div class="kpi-card" id="kpi-card-agua">
-                            <div class="kpi-header">
-                                <span>Agua + Alcantarillado</span>
-                                <div class="kpi-icon blue"><i data-lucide="droplet"></i></div>
-                            </div>
-                            <div class="kpi-value" id="kpi-agua-cost">$75,200</div>
-                            <div class="kpi-footer">
-                                <span id="kpi-agua-consumo">12 m³</span>
-                                <span class="divider">•</span>
-                                <span class="trend-indicator up"><i data-lucide="arrow-up-right"></i> +15%</span>
-                            </div>
-                        </div>
-                        <div class="kpi-card" id="kpi-card-gas">
-                            <div class="kpi-header">
-                                <span>Gas Natural</span>
-                                <div class="kpi-icon orange"><i data-lucide="flame"></i></div>
-                            </div>
-                            <div class="kpi-value" id="kpi-gas-cost">$16,800</div>
-                            <div class="kpi-footer">
-                                <span id="kpi-gas-consumo">8 m³</span>
-                                <span class="divider">•</span>
-                                <span class="trend-indicator down"><i data-lucide="arrow-down-left"></i> -2%</span>
-                            </div>
-                        </div>
-                    </div>
 
-
-                    <!-- ALERTAS INTELIGENTES -->
-                    <div id="alerts-panel" style="display:none;" class="alerts-panel">
-                        <div class="alerts-header">
-                            <i data-lucide="bell-ring"></i>
-                            <span>Alertas de consumo</span>
-                            <button onclick="document.getElementById('alerts-panel').style.display='none'" class="alerts-close"><i data-lucide="x"></i></button>
-                        </div>
-                        <div id="alerts-list" class="alerts-list"></div>
-                    </div>
-
-                    <!-- PROYECCION PROXIMO MES -->
-                    <div id="proyeccion-panel" style="display:none;" class="proyeccion-panel">
-                        <div class="panel-icon"><i data-lucide="line-chart"></i></div>
-                        <div class="panel-details">
-                            <h3>Proyección próximo mes</h3>
-                            <div id="proyeccion-content" class="proyeccion-content"></div>
-                        </div>
-                    </div>
-
-                    <!-- Empty State (shown when no data) -->
+                    <!-- ① EMPTY STATE -->
                     <div id="empty-state" class="empty-state" style="display:none;">
                         <div class="empty-state-icon"><i data-lucide="receipt"></i></div>
                         <h2>Aún no tienes facturas registradas</h2>
@@ -215,55 +145,123 @@
                         <button class="btn btn-primary" id="btn-empty-state-cta"><i data-lucide="upload-cloud"></i> Importar primera factura</button>
                     </div>
 
-                    <!-- Smart Explanation Panel -->
-                    <div class="info-alert-panel">
-                        <div class="panel-icon"><i data-lucide="sparkles"></i></div>
-                        <div class="panel-details">
-                            <h3>¿Por qué aumentó tu factura este mes?</h3>
-                            <p id="smart-explanation-text">
-                                Tu consumo general incrementó un <strong>9.2%</strong>. El principal causante fue el servicio de <strong>Agua (+15%)</strong>, sumando <strong>+$9,800 COP</strong> a la factura. Adicionalmente, la tarifa unitaria de Energía aumentó de <strong>$820 a $850 COP/kWh</strong> debido a indexación por inflación, lo que representó un incremento neto de <strong>+$3,300 COP</strong> aun manteniendo consumos similares.
-                            </p>
+                    <!-- ② HERO TOTAL — lo más importante primero -->
+                    <div class="total-hero-card" id="total-hero">
+                        <div class="total-hero-left">
+                            <span class="total-hero-label" id="total-hero-periodo">Factura actual</span>
+                            <div class="total-hero-value" id="kpi-total-factura">$0</div>
+                            <div class="kpi-change" id="total-hero-change">
+                                <i data-lucide="minus"></i>
+                                <span>Sin datos anteriores</span>
+                            </div>
+                        </div>
+                        <div class="total-hero-right">
+                            <!-- Comparación lado a lado -->
+                            <div class="side-compare" id="side-compare">
+                                <div class="side-compare-empty">Agrega al menos 2 facturas para ver la comparación</div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Charts Grid -->
+                    <!-- ③ DESGLOSE 3 SERVICIOS -->
+                    <div class="kpi-grid" id="kpi-grid">
+                        <div class="kpi-card" id="kpi-card-energia">
+                            <div class="kpi-header">
+                                <span>Energía</span>
+                                <div class="kpi-icon yellow"><i data-lucide="zap"></i></div>
+                            </div>
+                            <div class="kpi-value" id="kpi-energia-cost">$0</div>
+                            <div class="kpi-footer">
+                                <span id="kpi-energia-consumo">— kWh</span>
+                                <span class="divider">•</span>
+                                <span class="trend-indicator neutral" id="kpi-energia-trend"><i data-lucide="minus"></i> —</span>
+                            </div>
+                        </div>
+                        <div class="kpi-card" id="kpi-card-agua">
+                            <div class="kpi-header">
+                                <span>Agua + Alcantarillado</span>
+                                <div class="kpi-icon blue"><i data-lucide="droplet"></i></div>
+                            </div>
+                            <div class="kpi-value" id="kpi-agua-cost">$0</div>
+                            <div class="kpi-footer">
+                                <span id="kpi-agua-consumo">— m³</span>
+                                <span class="divider">•</span>
+                                <span class="trend-indicator neutral" id="kpi-agua-trend"><i data-lucide="minus"></i> —</span>
+                            </div>
+                        </div>
+                        <div class="kpi-card" id="kpi-card-gas">
+                            <div class="kpi-header">
+                                <span>Gas Natural</span>
+                                <div class="kpi-icon orange"><i data-lucide="flame"></i></div>
+                            </div>
+                            <div class="kpi-value" id="kpi-gas-cost">$0</div>
+                            <div class="kpi-footer">
+                                <span id="kpi-gas-consumo">— m³</span>
+                                <span class="divider">•</span>
+                                <span class="trend-indicator neutral" id="kpi-gas-trend"><i data-lucide="minus"></i> —</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ④ ALERTAS + PROYECCIÓN (fila horizontal) -->
+                    <div class="alerts-proyeccion-row">
+                        <div id="alerts-panel" style="display:none;" class="alerts-panel">
+                            <div class="alerts-header">
+                                <i data-lucide="bell-ring"></i>
+                                <span>Alertas de consumo</span>
+                                <button onclick="document.getElementById('alerts-panel').style.display='none'" class="alerts-close"><i data-lucide="x"></i></button>
+                            </div>
+                            <div id="alerts-list" class="alerts-list"></div>
+                        </div>
+                        <div id="proyeccion-panel" style="display:none;" class="proyeccion-panel">
+                            <div class="panel-icon"><i data-lucide="line-chart"></i></div>
+                            <div class="panel-details">
+                                <h3>Proyección próximo mes</h3>
+                                <div id="proyeccion-content" class="proyeccion-content"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ⑤ PANEL ¿POR QUÉ SUBIÓ? -->
+                    <div class="info-alert-panel why-panel" id="why-panel">
+                        <div class="panel-icon"><i data-lucide="sparkles"></i></div>
+                        <div class="panel-details">
+                            <h3 id="why-panel-title">¿Por qué cambió tu factura?</h3>
+                            <div id="smart-explanation-text">
+                                <p style="color:var(--text-muted)">Importa al menos 2 facturas para ver el análisis automático.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ⑥ GRÁFICAS -->
                     <div class="charts-grid">
-                        <!-- main chart -->
                         <div class="chart-container card-panel double-width" style="position:relative;">
                             <div class="chart-annotation"><span class="chart-badge" id="chart-main-badge"></span></div>
                             <div class="panel-header">
-                                <h3>Historial de Servicios (Últimos 6 meses)</h3>
+                                <h3>Historial de Servicios</h3>
                                 <div class="chart-actions">
                                     <button class="btn btn-sm btn-outline active" id="btn-chart-cost">Costo ($)</button>
-                                    <button class="btn btn-sm btn-outline" id="btn-chart-consumo">Consumo (Unidades)</button>
+                                    <button class="btn btn-sm btn-outline" id="btn-chart-consumo">Consumo</button>
                                 </div>
                             </div>
-                            <div class="chart-wrapper">
-                                <canvas id="historyChart"></canvas>
-                            </div>
+                            <div class="chart-wrapper"><canvas id="historyChart"></canvas></div>
                         </div>
-
-                        <!-- distribution chart -->
                         <div class="chart-container card-panel">
-                            <div class="panel-header">
-                                <h3>Distribución de Costos</h3>
-                            </div>
-                            <div class="chart-wrapper flex-center">
-                                <canvas id="distributionChart"></canvas>
-                            </div>
+                            <div class="panel-header"><h3>Distribución de Costos</h3></div>
+                            <div class="chart-wrapper flex-center"><canvas id="distributionChart"></canvas></div>
                         </div>
                     </div>
 
-                    <!-- Table with details -->
+                    <!-- ⑦ TABLA -->
                     <div class="card-panel table-panel">
                         <div class="panel-header">
-                            <h3>Historias de Facturas e Índices de Variación</h3>
+                            <h3>Historial de Facturas</h3>
                             <div class="table-panel-header-actions">
                                 <button class="btn btn-sm btn-outline text-danger" id="btn-clear-history">
-                                    <i data-lucide="trash-2"></i> Limpiar Historial
+                                    <i data-lucide="trash-2"></i> Limpiar
                                 </button>
-                                <button class="btn btn-sm btn-outline" id="btn-export-csv"><i data-lucide="download"></i> Exportar CSV</button>
-                                <button class="btn btn-sm btn-outline" id="btn-export-pdf" onclick="exportToPDF()"><i data-lucide="file-text"></i> Exportar PDF</button>
+                                <button class="btn btn-sm btn-outline" id="btn-export-csv"><i data-lucide="download"></i> CSV</button>
+                                <button class="btn btn-sm btn-outline" id="btn-export-pdf" onclick="exportToPDF()"><i data-lucide="file-text"></i> PDF</button>
                             </div>
                         </div>
                         <div class="table-wrapper">
@@ -271,18 +269,16 @@
                                 <thead>
                                     <tr>
                                         <th>Mes</th>
-                                        <th>Total Factura</th>
-                                        <th>Energía (Luz)</th>
+                                        <th>Total</th>
+                                        <th>Energía</th>
                                         <th>Agua + Alc.</th>
                                         <th>Gas</th>
-                                        <th>Aseo + Otros</th>
+                                        <th>Otros</th>
                                         <th>Estado</th>
-                                        <th>Acciones</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
-                                <tbody id="history-table-body">
-                                    <!-- Populated by JS -->
-                                </tbody>
+                                <tbody id="history-table-body"></tbody>
                             </table>
                         </div>
                     </div>

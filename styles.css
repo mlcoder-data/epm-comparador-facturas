@@ -1886,3 +1886,175 @@ body {
 }
 
 /* ── TOOLTIPS chart (custom styles handled via Chart.js config) ─────────── */
+
+/* ══════════════════════════════════════════════════════════════════
+   HERO TOTAL CARD
+   ══════════════════════════════════════════════════════════════════ */
+.total-hero-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    background: linear-gradient(135deg,
+        rgba(16,185,129,0.08) 0%,
+        rgba(6,182,212,0.05) 50%,
+        rgba(99,102,241,0.05) 100%);
+    border: 1px solid rgba(16,185,129,0.2);
+    border-radius: var(--radius-xl, 1.25rem);
+    padding: 1.75rem 2rem;
+    margin-bottom: 1.25rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.total-hero-card::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(16,185,129,0.1), transparent 70%);
+    pointer-events: none;
+}
+
+.total-hero-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.total-hero-label {
+    font-size: var(--text-xs, 0.72rem);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+#kpi-total-factura {
+    font-size: 2.6rem;
+    font-weight: 800;
+    letter-spacing: -1.5px;
+    font-family: var(--font-display);
+    color: var(--text-main);
+    line-height: 1;
+    margin: 0.1rem 0;
+}
+
+.total-hero-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+/* ── COMPARACIÓN LADO A LADO ─────────────────────────────────────── */
+.side-compare-empty {
+    font-size: var(--text-sm, 0.82rem);
+    color: var(--text-muted);
+    font-style: italic;
+    text-align: center;
+}
+
+.compare-months {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.6rem;
+}
+
+.compare-month {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 100px;
+}
+
+.compare-month-label {
+    font-size: var(--text-xs, 0.72rem);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+}
+
+.compare-month-val {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-main);
+    font-variant-numeric: tabular-nums;
+}
+
+.compare-current {
+    color: var(--green) !important;
+    font-size: 1.2rem !important;
+}
+
+.compare-arrow {
+    font-size: 1.4rem;
+    font-weight: 900;
+    padding: 0 0.25rem;
+    flex-shrink: 0;
+}
+
+.compare-diff-up   { color: var(--red); }
+.compare-diff-down { color: var(--green); }
+
+.compare-summary {
+    font-size: var(--text-sm, 0.82rem);
+    font-weight: 700;
+    padding: 0.35rem 0.85rem;
+    border-radius: 99px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.compare-summary.compare-diff-up {
+    background: rgba(239,68,68,0.1);
+    color: var(--red);
+    border: 1px solid rgba(239,68,68,0.2);
+}
+
+.compare-summary.compare-diff-down {
+    background: rgba(16,185,129,0.1);
+    color: var(--green);
+    border: 1px solid rgba(16,185,129,0.2);
+}
+
+/* ── KPI GRID: 3 columnas (sin la card total que está en hero) ──── */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+/* ── ALERTAS + PROYECCIÓN en fila ────────────────────────────────── */
+.alerts-proyeccion-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.alerts-proyeccion-row .alerts-panel {
+    flex: 1;
+    min-width: 280px;
+    margin-bottom: 0;
+}
+
+.alerts-proyeccion-row .proyeccion-panel {
+    flex: 1;
+    min-width: 280px;
+    margin-bottom: 0;
+}
+
+/* ── WHY PANEL ────────────────────────────────────────────────────── */
+.why-panel {
+    margin-bottom: 1.25rem;
+}
+
+.why-panel #smart-explanation-text p {
+    margin-bottom: 0.75rem;
+    line-height: 1.7;
+    color: var(--text-main);
+}
