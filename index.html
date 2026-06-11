@@ -46,7 +46,8 @@
 <body>
     <div class="app-container">
         <!-- Sidebar Navigation -->
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
+            <button class="sidebar-toggle" id="sidebar-toggle" title="Colapsar menú"><i data-lucide="chevrons-left" id="sidebar-toggle-icon"></i></button>
             <div class="logo-area">
                 <div class="logo-icon">
                     <i data-lucide="zap" class="icon-primary"></i>
@@ -75,6 +76,18 @@
                     <span>Control de Tarifas</span>
                 </button>
             </nav>
+            <!-- Botón Portal EPM -->
+            <a href="https://b2c.epm.com.co/b2cepmco.onmicrosoft.com/b2c_1a_signup_signin/oauth2/v2.0/authorize?response_type=id_token&scope=openid%20profile&client_id=a3d0b020-6827-4052-97b0-45a9559d2e24&redirect_uri=https%3A%2F%2Faplicaciones.epm.com.co%2Ffacturaweb&state=eyJpZCI6IjlmMmNhM2IxLWI2ODItNDUwNC05NWRhLTc1OWY0MmE1ZDI3OSIsInRzIjoxNzgxMDY0MjU0LCJtZXRob2QiOiJyZWRpcmVjdEludGVyYWN0aW9uIn0%3D&nonce=0a9cc07c-96bb-446e-90f5-aa96f4144fa3&client_info=1&x-client-SKU=MSAL.JS&x-client-Ver=1.4.16&ChannelName=web&prompt=login&client-request-id=4f7f85e1-7976-4d3a-bf03-a24abc04fa61&response_mode=fragment" target="_blank" class="epm-portal-btn" title="Ir al portal EPM para descargar tu factura">
+                <div class="epm-portal-icon">
+                    <i data-lucide="external-link"></i>
+                </div>
+                <div class="epm-portal-info">
+                    <span class="epm-portal-label">Portal EPM</span>
+                    <span class="epm-portal-sub">Descargar factura</span>
+                </div>
+                <i data-lucide="chevron-right" class="epm-portal-arrow"></i>
+            </a>
+
             <div class="user-profile">
                 <div class="profile-pic">U</div>
                 <div class="profile-info">
@@ -104,6 +117,11 @@
                             <option value="6">Estrato 6 (Contribuyente)</option>
                         </select>
                     </div>
+                    <a href="https://b2c.epm.com.co/b2cepmco.onmicrosoft.com/b2c_1a_signup_signin/oauth2/v2.0/authorize?response_type=id_token&scope=openid%20profile&client_id=a3d0b020-6827-4052-97b0-45a9559d2e24&redirect_uri=https%3A%2F%2Faplicaciones.epm.com.co%2Ffacturaweb&state=eyJpZCI6IjlmMmNhM2IxLWI2ODItNDUwNC05NWRhLTc1OWY0MmE1ZDI3OSIsInRzIjoxNzgxMDY0MjU0LCJtZXRob2QiOiJyZWRpcmVjdEludGVyYWN0aW9uIn0%3D&nonce=0a9cc07c-96bb-446e-90f5-aa96f4144fa3&client_info=1&x-client-SKU=MSAL.JS&x-client-Ver=1.4.16&ChannelName=web&prompt=login&client-request-id=4f7f85e1-7976-4d3a-bf03-a24abc04fa61&response_mode=fragment" target="_blank" class="btn-epm-header" title="Iniciar sesión en EPM para ver y descargar tus facturas">
+                        <i data-lucide="building-2"></i>
+                        <span>Portal EPM</span>
+                        <i data-lucide="arrow-up-right" class="arrow-icon"></i>
+                    </a>
                     <button class="btn btn-primary" id="btn-importar-factura">
                         <i data-lucide="upload-cloud"></i>
                         <span>Importar Factura</span>
@@ -167,6 +185,34 @@
                         </div>
                     </div>
 
+
+                    <!-- ALERTAS INTELIGENTES -->
+                    <div id="alerts-panel" style="display:none;" class="alerts-panel">
+                        <div class="alerts-header">
+                            <i data-lucide="bell-ring"></i>
+                            <span>Alertas de consumo</span>
+                            <button onclick="document.getElementById('alerts-panel').style.display='none'" class="alerts-close"><i data-lucide="x"></i></button>
+                        </div>
+                        <div id="alerts-list" class="alerts-list"></div>
+                    </div>
+
+                    <!-- PROYECCION PROXIMO MES -->
+                    <div id="proyeccion-panel" style="display:none;" class="proyeccion-panel">
+                        <div class="panel-icon"><i data-lucide="line-chart"></i></div>
+                        <div class="panel-details">
+                            <h3>Proyección próximo mes</h3>
+                            <div id="proyeccion-content" class="proyeccion-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- Empty State (shown when no data) -->
+                    <div id="empty-state" class="empty-state" style="display:none;">
+                        <div class="empty-state-icon"><i data-lucide="receipt"></i></div>
+                        <h2>Aún no tienes facturas registradas</h2>
+                        <p>Importa tu primera factura PDF de EPM o ingrésala manualmente para ver el análisis completo de tus consumos.</p>
+                        <button class="btn btn-primary" id="btn-empty-state-cta"><i data-lucide="upload-cloud"></i> Importar primera factura</button>
+                    </div>
+
                     <!-- Smart Explanation Panel -->
                     <div class="info-alert-panel">
                         <div class="panel-icon"><i data-lucide="sparkles"></i></div>
@@ -181,7 +227,8 @@
                     <!-- Charts Grid -->
                     <div class="charts-grid">
                         <!-- main chart -->
-                        <div class="chart-container card-panel double-width">
+                        <div class="chart-container card-panel double-width" style="position:relative;">
+                            <div class="chart-annotation"><span class="chart-badge" id="chart-main-badge"></span></div>
                             <div class="panel-header">
                                 <h3>Historial de Servicios (Últimos 6 meses)</h3>
                                 <div class="chart-actions">
@@ -214,6 +261,7 @@
                                     <i data-lucide="trash-2"></i> Limpiar Historial
                                 </button>
                                 <button class="btn btn-sm btn-outline" id="btn-export-csv"><i data-lucide="download"></i> Exportar CSV</button>
+                                <button class="btn btn-sm btn-outline" id="btn-export-pdf" onclick="exportToPDF()"><i data-lucide="file-text"></i> Exportar PDF</button>
                             </div>
                         </div>
                         <div class="table-wrapper">
@@ -243,51 +291,49 @@
                     <div class="detail-grid">
                         <div class="card-panel">
                             <div class="panel-header">
-                                <h3>Detalle del Consumo - Energía</h3>
+                                <h3>Detalle del Consumo — Energía</h3>
                             </div>
+
+                            <!-- TARIFA DESTACADA -->
+                            <div class="rate-hero" id="energia-rate-hero">
+                                <div class="rate-hero-main">
+                                    <span class="rate-hero-label"><i data-lucide="zap"></i> Tarifa kWh en tu último recibo</span>
+                                    <span class="rate-hero-value" id="detail-energia-tarifa">$801.24</span>
+                                    <span class="rate-hero-unit">COP / kWh</span>
+                                </div>
+                                <div class="rate-hero-diff" id="energia-rate-diff"></div>
+                            </div>
+
                             <div class="metric-breakdown">
                                 <div class="detail-row">
-                                    <span class="label">Consumo Activo</span>
-                                    <span class="value" id="detail-energia-consumo">110 kWh</span>
+                                    <span class="label">Consumo registrado</span>
+                                    <span class="value highlight-val" id="detail-energia-consumo">110 kWh</span>
                                 </div>
                                 <div class="detail-row">
-                                    <span class="label">Costo por kWh (Tarifa)</span>
-                                    <span class="value" id="detail-energia-tarifa">$850 COP</span>
+                                    <span class="label">Subsidio / Contribución estrato</span>
+                                    <span class="value badge neutrall" id="detail-energia-subsidio">—</span>
                                 </div>
                                 <div class="detail-row">
-                                    <span class="label">Subsidio / Contribución</span>
-                                    <span class="value badge neutrall" id="detail-energia-subsidio">$0 COP (Estrato 4)</span>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="label">Cargo Alumbrado Público</span>
-                                    <span class="value" id="detail-energia-alumbrado">$13,000 COP</span>
+                                    <span class="label">Alumbrado Público</span>
+                                    <span class="value" id="detail-energia-alumbrado">$6,000</span>
                                 </div>
                                 <hr class="panel-divider">
                                 <div class="detail-row total-row">
-                                    <span class="label">Total Energía</span>
-                                    <span class="value" id="detail-energia-total">$93,500 COP</span>
+                                    <span class="label">Total Energía facturado</span>
+                                    <span class="value" id="detail-energia-total">$0</span>
                                 </div>
                             </div>
                         </div>
 
                         <div class="card-panel">
                             <div class="panel-header">
-                                <h3>Análisis del Costo Unitario de Energía</h3>
+                                <h3>Evolución del precio por kWh</h3>
                             </div>
-                            <p class="panel-desc">EPM calcula el costo por kWh basándose en la tarifa regulada de la CREG. Tu tarifa ha subido un <strong>3.6%</strong> este mes en comparación con el mes anterior ($820/kWh).</p>
-                            <div class="tariff-trend">
-                                <div class="trend-bar-container">
-                                    <div class="trend-bar-label">Abril: $820</div>
-                                    <div class="trend-bar"><div class="bar-fill" style="width: 90%;"></div></div>
-                                </div>
-                                <div class="trend-bar-container mt-3">
-                                    <div class="trend-bar-label">Mayo: $850 (Actual)</div>
-                                    <div class="trend-bar alert-bar"><div class="bar-fill" style="width: 100%;"></div></div>
-                                </div>
-                            </div>
+                            <p class="panel-desc" id="energia-trend-desc">Compara la tarifa de energía de los últimos meses.</p>
+                            <div class="rate-bars" id="energia-rate-bars"></div>
                             <div class="tip-box mt-4">
                                 <i data-lucide="info"></i>
-                                <span><strong>Consejo EPM:</strong> En estratos 1, 2 y 3, el consumo de subsistencia (hasta 130 kWh o 173 kWh dependiendo de la altura sobre el nivel del mar) está subsidiado. En estratos 5 y 6 se cobra una contribución de solidaridad del 20% para financiar estos subsidios.</span>
+                                <span><strong>¿Por qué sube la tarifa?</strong> EPM ajusta el precio por kWh según la CREG cada mes. En estrato 3 el primer tramo (130 kWh) tiene subsidio del 15%. Si tu consumo supera ese límite, el excedente se cobra a tarifa plena.</span>
                             </div>
                         </div>
                     </div>
@@ -298,59 +344,67 @@
                     <div class="detail-grid">
                         <div class="card-panel">
                             <div class="panel-header">
-                                <h3>Detalle del Consumo - Acueducto & Alcantarillado</h3>
+                                <h3>Detalle del Consumo — Acueducto & Alcantarillado</h3>
                             </div>
+
+                            <!-- TARIFA DESTACADA AGUA -->
+                            <div class="rate-hero rate-hero-blue" id="agua-rate-hero">
+                                <div class="rate-hero-main">
+                                    <span class="rate-hero-label"><i data-lucide="droplet"></i> Tarifa m³ en tu último recibo</span>
+                                    <span class="rate-hero-value" id="detail-agua-tarifa-acueducto">$4,864</span>
+                                    <span class="rate-hero-unit">COP / m³ acueducto</span>
+                                </div>
+                                <div class="rate-hero-diff" id="agua-rate-diff"></div>
+                            </div>
+
                             <div class="metric-breakdown">
                                 <div class="detail-row">
-                                    <span class="label">Consumo de Agua</span>
-                                    <span class="value" id="detail-agua-consumo">12 m³</span>
+                                    <span class="label">Consumo registrado</span>
+                                    <span class="value highlight-val" id="detail-agua-consumo">12 m³</span>
                                 </div>
                                 <div class="detail-row">
-                                    <span class="label">Cargo Fijo Acueducto</span>
-                                    <span class="value" id="detail-agua-cargo-fijo">$11,200 COP</span>
+                                    <span class="label">Cargo fijo acueducto</span>
+                                    <span class="value" id="detail-agua-cargo-fijo">$9,851</span>
                                 </div>
                                 <div class="detail-row">
-                                    <span class="label">Tarifa Consumo Acueducto ($/m³)</span>
-                                    <span class="value" id="detail-agua-tarifa-acueducto">$2,800 COP</span>
+                                    <span class="label">Tarifa alcantarillado ($/m³)</span>
+                                    <span class="value" id="detail-agua-tarifa-alcantarillado">$3,885</span>
                                 </div>
                                 <div class="detail-row">
-                                    <span class="label">Cargo Fijo Alcantarillado</span>
-                                    <span class="value" id="detail-agua-cargo-fijo-alc">$9,800 COP</span>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="label">Tarifa Consumo Alcantarillado ($/m³)</span>
-                                    <span class="value" id="detail-agua-tarifa-alcantarillado">$1,720 COP</span>
+                                    <span class="label">Cargo fijo alcantarillado</span>
+                                    <span class="value" id="detail-agua-cargo-fijo-alc">$5,668</span>
                                 </div>
                                 <hr class="panel-divider">
                                 <div class="detail-row total-row">
-                                    <span class="label">Total Agua + Alc.</span>
-                                    <span class="value" id="detail-agua-total">$75,200 COP</span>
+                                    <span class="label">Total Agua + Alcantarillado</span>
+                                    <span class="value" id="detail-agua-total">$0</span>
                                 </div>
                             </div>
                         </div>
 
                         <div class="card-panel">
                             <div class="panel-header">
-                                <h3>Límites de Consumo Básico en Colombia</h3>
+                                <h3>Tu consumo vs límite subsidiado</h3>
                             </div>
-                            <p class="panel-desc">La Comisión de Regulación de Agua Potable (CRA) establece un consumo básico de <strong>16 m³</strong> mensuales en zonas templadas/frías (como Medellín). Consumos superiores no reciben subsidio en estratos subsidiados.</p>
-                            
-                            <!-- Gauge visualizer -->
+                            <p class="panel-desc" id="agua-gauge-desc">Los primeros 13 m³ tienen subsidio. El excedente se cobra a tarifa plena.</p>
+
                             <div class="gauge-container">
                                 <div class="gauge-bar-wrapper">
-                                    <div class="gauge-marker" style="left: 75%;" title="Límite básico: 16m³"><span>16 m³ (Límite)</span></div>
-                                    <div class="gauge-bar" id="water-gauge-bar" style="width: 75%;"></div>
+                                    <div class="gauge-marker" id="agua-gauge-marker" style="left: 65%;"><span id="agua-gauge-marker-label">13 m³ (Límite)</span></div>
+                                    <div class="gauge-bar" id="water-gauge-bar" style="width: 60%;"></div>
                                 </div>
                                 <div class="gauge-label flex-between">
                                     <span>0 m³</span>
-                                    <span class="text-primary font-bold">Tu consumo: 12 m³</span>
-                                    <span>24 m³</span>
+                                    <span class="text-primary font-bold" id="agua-gauge-text">Tu consumo: 12 m³</span>
+                                    <span id="agua-gauge-max">20 m³</span>
                                 </div>
                             </div>
 
+                            <div class="rate-bars mt-4" id="agua-rate-bars"></div>
+
                             <div class="tip-box mt-4">
-                                <i data-lucide="droplet" class="blue"></i>
-                                <span>Recuerda que cada metro cúbico ($m^3$) de agua equivale a 1,000 litros. Tu consumo de 12 m³ equivale a unos 12,000 litros de agua al mes.</span>
+                                <i data-lucide="droplet"></i>
+                                <span>1 m³ = 1.000 litros. El consumo básico subsidiado en Medellín es <strong>13 m³</strong> por hogar. Reducir ducharse de 15 a 5 min ahorra ~1 m³ al mes.</span>
                             </div>
                         </div>
                     </div>
@@ -361,40 +415,48 @@
                     <div class="detail-grid">
                         <div class="card-panel">
                             <div class="panel-header">
-                                <h3>Detalle del Consumo - Gas Natural</h3>
+                                <h3>Detalle del Consumo — Gas Natural</h3>
                             </div>
+
+                            <!-- TARIFA DESTACADA GAS -->
+                            <div class="rate-hero rate-hero-orange" id="gas-rate-hero">
+                                <div class="rate-hero-main">
+                                    <span class="rate-hero-label"><i data-lucide="flame"></i> Tarifa m³ en tu último recibo</span>
+                                    <span class="rate-hero-value" id="detail-gas-tarifa">$3,158</span>
+                                    <span class="rate-hero-unit">COP / m³</span>
+                                </div>
+                                <div class="rate-hero-diff" id="gas-rate-diff"></div>
+                            </div>
+
                             <div class="metric-breakdown">
                                 <div class="detail-row">
-                                    <span class="label">Consumo de Gas</span>
-                                    <span class="value" id="detail-gas-consumo">8 m³</span>
+                                    <span class="label">Consumo registrado</span>
+                                    <span class="value highlight-val" id="detail-gas-consumo">8 m³</span>
                                 </div>
                                 <div class="detail-row">
-                                    <span class="label">Costo por m³ (Tarifa)</span>
-                                    <span class="value" id="detail-gas-tarifa">$1,550 COP</span>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="label">Cargo Fijo Gas</span>
-                                    <span class="value" id="detail-gas-cargo-fijo">$4,400 COP</span>
+                                    <span class="label">Cargo fijo mensual</span>
+                                    <span class="value" id="detail-gas-cargo-fijo">$4,253</span>
                                 </div>
                                 <hr class="panel-divider">
                                 <div class="detail-row total-row">
-                                    <span class="label">Total Gas</span>
-                                    <span class="value" id="detail-gas-total">$16,800 COP</span>
+                                    <span class="label">Total Gas facturado</span>
+                                    <span class="value" id="detail-gas-total">$0</span>
                                 </div>
                             </div>
                         </div>
 
                         <div class="card-panel">
                             <div class="panel-header">
-                                <h3>Eficiencia de Gas</h3>
+                                <h3>Evolución del precio por m³ y consumo</h3>
                             </div>
-                            <p class="panel-desc">El gas natural es uno de los servicios más económicos y estables en tarifas. Tu consumo disminuyó un <strong>2%</strong> este mes respecto al promedio histórico.</p>
-                            
-                            <div class="gas-efficiency-indicator">
-                                <div class="icon-circle orange"><i data-lucide="thumbs-up"></i></div>
+                            <p class="panel-desc" id="gas-trend-desc">Compara la tarifa y el consumo de gas de los últimos meses.</p>
+                            <div class="rate-bars" id="gas-rate-bars"></div>
+
+                            <div class="gas-efficiency-indicator mt-4" id="gas-efficiency-box">
+                                <div class="icon-circle orange"><i data-lucide="flame" id="gas-eff-icon"></i></div>
                                 <div>
-                                    <h4 class="font-bold">¡Buen trabajo!</h4>
-                                    <p class="text-sm">Estás dentro del rango óptimo de consumo de gas para hogares medianos (6m³ a 10m³).</p>
+                                    <h4 class="font-bold" id="gas-eff-title">—</h4>
+                                    <p class="text-sm" id="gas-eff-msg">Carga una factura para ver el análisis.</p>
                                 </div>
                             </div>
                         </div>

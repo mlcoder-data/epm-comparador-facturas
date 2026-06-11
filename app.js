@@ -1,103 +1,81 @@
 // --- EPM PRICING SCHEME (Extracted from the user's real bill) ---
 const EPM_CONFIG = {
     energia: {
-        tarifa_plena: 801.24,  // COP per kWh
-        limite_subsistencia: 130, // kWh limit for subsidy in Medellín
-        subsidios: { 1: 0.60, 2: 0.50, 3: 0.15, 4: 0.0, 5: -0.20, 6: -0.20 } // Negative represents solidarity contribution
+        // Tarifa verificada con factura real Mayo 2026 ($864.69/kWh antes de subsidio)
+        tarifa_plena: 864.69,
+        limite_subsistencia: 130, // kWh subsidiados en Medellín (< 1800 msnm)
+        subsidios: { 1: 0.60, 2: 0.50, 3: 0.15, 4: 0.0, 5: -0.20, 6: -0.20 }
     },
     acueducto: {
         cargo_fijo: 9851.98,
-        tarifa_plena: 4864.82, // COP per m3
-        limite_basico: 13, // m3 subsidized in Medellín
+        tarifa_plena: 4864.82, // Verificado con factura real
+        limite_basico: 13,     // m³ subsidiados en Medellín
         subsidios: { 1: 0.70, 2: 0.40, 3: 0.125, 4: 0.0, 5: -0.50, 6: -0.60 }
     },
     alcantarillado: {
         cargo_fijo: 5668.99,
-        tarifa_plena: 3885.68, // COP per m3
-        limite_basico: 13, // m3 subsidized
+        tarifa_plena: 3885.68, // Verificado con factura real
+        limite_basico: 13,
         subsidios: { 1: 0.70, 2: 0.40, 3: 0.125, 4: 0.0, 5: -0.50, 6: -0.60 }
     },
     gas: {
-        cargo_fijo: 4253.03,
-        tarifa_plena: 3158.46, // COP per m3
+        cargo_fijo: 4293.48,
+        tarifa_plena: 3242.93, // Verificado con factura real Mayo 2026
         subsidios: { 1: 0.60, 2: 0.50, 3: 0.0, 4: 0.0, 5: -0.20, 6: -0.20 }
     },
     aseo: {
-        cargo_fijo: 18634.40,
-        aprovecha: 2154.53,
-        variable: 14794.50,
+        // Verificado con factura Emvarias (estrato 3, incluye subsidio 15%)
+        cargo_fijo: 18679.00,
+        aprovecha: 2265.87,
+        variable: 14935.98,
         subsidios: { 1: 0.70, 2: 0.40, 3: 0.15, 4: 0.0, 5: -0.50, 6: -0.60 }
     },
-    alumbrado: 6000.00
+    alumbrado: 6000.00 // Municipio de Medellín, fijo por factura
 };
 
 // Default invoice history with realistic historical rates over time
+// Historial de ejemplo — tasas calibradas con facturas reales EPM Medellín
+// Estrato 3. Los totales se recalculan en calculateInvoices()
 const DEFAULT_HISTORY = [
     {
-        mes: "Noviembre 2025",
-        kwh: 152,
-        agua_m3: 13,
-        gas_m3: 14.5,
-        rate_energia: 780.12,
-        rate_agua: 4680.50,
-        rate_alcantarillado: 3750.20,
-        rate_gas: 3050.40,
-        estado: "Pagado"
+        mes: "Noviembre 2025", kwh: 167,
+        agua_m3: 17, gas_m3: 21.0,
+        rate_energia: 835.20, rate_agua: 4680.50,
+        rate_alcantarillado: 3720.30, rate_gas: 3080.40, estado: "Pagado"
     },
     {
-        mes: "Diciembre 2025",
-        kwh: 168,
-        agua_m3: 15,
-        gas_m3: 16.0,
-        rate_energia: 785.45,
-        rate_agua: 4710.10,
-        rate_alcantarillado: 3780.50,
-        rate_gas: 3080.10,
-        estado: "Pagado"
+        mes: "Diciembre 2025", kwh: 191,
+        agua_m3: 19, gas_m3: 17.0,
+        rate_energia: 840.15, rate_agua: 4710.80,
+        rate_alcantarillado: 3745.60, rate_gas: 3100.10, estado: "Pagado"
     },
     {
-        mes: "Enero 2026",
-        kwh: 162,
-        agua_m3: 14,
-        gas_m3: 15.2,
-        rate_energia: 790.30,
-        rate_agua: 4750.30,
-        rate_alcantarillado: 3810.20,
-        rate_gas: 3100.80,
-        estado: "Pagado"
+        mes: "Enero 2026", kwh: 168,
+        agua_m3: 15, gas_m3: 16.0,
+        rate_energia: 845.30, rate_agua: 4740.20,
+        rate_alcantarillado: 3768.40, rate_gas: 3118.80, estado: "Pagado"
     },
     {
-        mes: "Febrero 2026",
-        kwh: 158,
-        agua_m3: 13,
-        gas_m3: 14.8,
-        rate_energia: 794.80,
-        rate_agua: 4790.20,
-        rate_alcantarillado: 3840.40,
-        rate_gas: 3120.50,
-        estado: "Pagado"
+        mes: "Febrero 2026", kwh: 187,
+        agua_m3: 17, gas_m3: 16.0,
+        rate_energia: 850.60, rate_agua: 4778.50,
+        rate_alcantarillado: 3798.20, rate_gas: 3135.50, estado: "Pagado"
     },
     {
-        mes: "Marzo 2026",
-        kwh: 170,
-        agua_m3: 16,
-        gas_m3: 18.0,
-        rate_energia: 798.50,
-        rate_agua: 4830.10,
-        rate_alcantarillado: 3865.10,
-        rate_gas: 3140.20,
-        estado: "Pagado"
+        mes: "Marzo 2026", kwh: 168,
+        agua_m3: 15, gas_m3: 15.0,
+        rate_energia: 855.80, rate_agua: 4810.30,
+        rate_alcantarillado: 3830.10, rate_gas: 3158.20, estado: "Pagado"
     },
     {
-        mes: "Abril 2026", // Matches User's Real EPM Invoice exactly!
-        kwh: 178,
-        agua_m3: 15,
-        gas_m3: 17.1,
-        rate_energia: 801.24,
-        rate_agua: 4864.82,
-        rate_alcantarillado: 3885.68,
-        rate_gas: 3158.46,
-        estado: "Pagado"
+        // Factura real Abril 2026 (verificada con recibo real)
+        mes: "Abril 2026", kwh: 178,
+        agua_m3: 15, gas_m3: 17.1,
+        rate_energia: 864.69, rate_agua: 4864.82,
+        rate_alcantarillado: 3885.68, rate_gas: 3242.93,
+        // Totales reales del recibo
+        energia: 126996, agua: 130618, gas: 58262, otros: 36245,
+        total: 352124, fromPdf: true, estado: "Pagado"
     }
 ];
 
@@ -280,16 +258,6 @@ function initApp() {
     updateDashboardUI();
     setupImportFlow();
 
-    // Delegación global: cualquier botón con id "btn-importar-factura" o
-    // clase "btn-open-import" abre el modal aunque se inserte dinámicamente
-    document.body.addEventListener("click", (e) => {
-        const btn = e.target.closest("#btn-importar-factura, .btn-open-import");
-        if (btn && el.modalImport) {
-            el.modalImport.classList.add("open");
-            resetImportModal();
-        }
-    });
-
     // Change stratum handler
     if (el.estratoSelect) {
         el.estratoSelect.addEventListener("change", (e) => {
@@ -307,6 +275,40 @@ function initApp() {
     if (btnCost && btnConsumo) {
         btnCost.addEventListener("click", (e) => setChartType("cost", e.target));
         btnConsumo.addEventListener("click", (e) => setChartType("consumo", e.target));
+    }
+
+    // ── SIDEBAR TOGGLE ────────────────────────────────────────────────────
+    const sidebarEl = document.getElementById("sidebar");
+    const sidebarToggle = document.getElementById("sidebar-toggle");
+    const sidebarIcon = document.getElementById("sidebar-toggle-icon");
+    const mainContent = document.querySelector(".main-content");
+
+    if (sidebarToggle && sidebarEl) {
+        // Restore state from localStorage
+        if (localStorage.getItem("epm_sidebar_collapsed") === "1") {
+            sidebarEl.classList.add("collapsed");
+            mainContent && mainContent.classList.add("expanded");
+            sidebarIcon && sidebarIcon.setAttribute("data-lucide", "chevrons-right");
+        }
+
+        sidebarToggle.addEventListener("click", () => {
+            const collapsed = sidebarEl.classList.toggle("collapsed");
+            mainContent && mainContent.classList.toggle("expanded", collapsed);
+            if (sidebarIcon) {
+                sidebarIcon.setAttribute("data-lucide", collapsed ? "chevrons-right" : "chevrons-left");
+            }
+            localStorage.setItem("epm_sidebar_collapsed", collapsed ? "1" : "0");
+            if (typeof lucide !== "undefined") lucide.createIcons();
+        });
+    }
+
+    // ── EMPTY STATE CTA ───────────────────────────────────────────────────
+    const emptyStateCta = document.getElementById("btn-empty-state-cta");
+    if (emptyStateCta) {
+        emptyStateCta.addEventListener("click", () => {
+            const btn = document.getElementById("btn-importar-factura");
+            if (btn) btn.click();
+        });
     }
 
     // Lucide Icons
@@ -403,14 +405,15 @@ function calculateInvoices() {
             
             const rawSubCost = subKwh * rEnergia;
             energiaSubsidy = rawSubCost * eSubsidyRate;
-            energiaCost = (rawSubCost - energiaSubsidy) + (plenaKwh * rEnergia) + EPM_CONFIG.alumbrado;
+            energiaCost = (rawSubCost - energiaSubsidy) + (plenaKwh * rEnergia);
         } else if (eSubsidyRate < 0) {
             const rawCost = item.kwh * rEnergia;
             const contribution = rawCost * Math.abs(eSubsidyRate);
-            energiaCost = rawCost + contribution + EPM_CONFIG.alumbrado;
+            energiaCost = rawCost + contribution;
         } else {
-            energiaCost = (item.kwh * rEnergia) + EPM_CONFIG.alumbrado;
+            energiaCost = (item.kwh * rEnergia);
         }
+        // Nota: Alumbrado público se suma en 'otros' (ver sección aseo abajo)
 
         // 2. Acueducto (Water)
         const wConf = EPM_CONFIG.acueducto;
@@ -472,13 +475,12 @@ function calculateInvoices() {
             gasCost = gConf.cargo_fijo + (item.gas_m3 * rGas);
         }
 
-        // 5. Aseo (Emvarias)
+        // 5. Aseo (Emvarias) + Alumbrado Público
         if (!item.hasOwnProperty('otros') || item.otros === undefined || item.otros === 0 || item.isAutocalculatedAseo) {
             const aConf = EPM_CONFIG.aseo;
             const aSubsidyRate = aConf.subsidios[currentStratum];
             const rawAseoTotal = aConf.cargo_fijo + aConf.aprovecha + aConf.variable;
             let aseoCost = 0;
-            
             if (aSubsidyRate > 0) {
                 aseoCost = rawAseoTotal * (1 - aSubsidyRate);
             } else if (aSubsidyRate < 0) {
@@ -486,7 +488,8 @@ function calculateInvoices() {
             } else {
                 aseoCost = rawAseoTotal;
             }
-            item.otros = Math.round(aseoCost);
+            // Alumbrado público: cargo fijo del Municipio de Medellín
+            item.otros = Math.round(aseoCost + EPM_CONFIG.alumbrado);
             item.isAutocalculatedAseo = true;
         }
 
@@ -536,8 +539,184 @@ function setupTabSwitching() {
 }
 
 // --- UPDATE DASHBOARD ELEMENTS ---
+
+// --- ALERTAS INTELIGENTES DE CONSUMO ---
+function generateAlerts() {
+    if (invoiceHistory.length < 2) return [];
+    const alerts = [];
+    const latest = invoiceHistory[invoiceHistory.length - 1];
+    const prev   = invoiceHistory[invoiceHistory.length - 2];
+
+    // Promedio de los últimos 3 meses (sin el actual)
+    const last3 = invoiceHistory.slice(-4, -1);
+    const avg = (field) => last3.length
+        ? last3.reduce((s, i) => s + (i[field] || 0), 0) / last3.length
+        : prev[field] || 0;
+
+    const checks = [
+        { field: "kwh",     label: "Energía",      unit: "kWh", threshold: 15 },
+        { field: "agua_m3", label: "Agua",          unit: "m³",  threshold: 20 },
+        { field: "gas_m3",  label: "Gas",           unit: "m³",  threshold: 20 },
+        { field: "total",   label: "Factura total", unit: "COP", threshold: 15 },
+    ];
+
+    for (const c of checks) {
+        const current = latest[c.field] || 0;
+        const reference = avg(c.field) || prev[c.field] || 0;
+        if (!reference) continue;
+        const pct = ((current - reference) / reference) * 100;
+
+        if (pct >= c.threshold) {
+            alerts.push({
+                type: "warning",
+                icon: pct >= 30 ? "alert-triangle" : "trending-up",
+                title: `${c.label} subió ${pct.toFixed(0)}%`,
+                msg: `Consumo actual: ${c.field === "total"
+                    ? formatCOP(current)
+                    : current + " " + c.unit
+                } vs promedio ${c.field === "total"
+                    ? formatCOP(Math.round(reference))
+                    : Math.round(reference) + " " + c.unit
+                } de los últimos meses.`,
+                severity: pct >= 30 ? "high" : "medium"
+            });
+        } else if (pct <= -c.threshold) {
+            alerts.push({
+                type: "success",
+                icon: "trending-down",
+                title: `¡${c.label} bajó ${Math.abs(pct).toFixed(0)}%!`,
+                msg: `Consumo actual: ${c.field === "total"
+                    ? formatCOP(current)
+                    : current + " " + c.unit
+                }. ¡Buen trabajo ahorrando!`,
+                severity: "low"
+            });
+        }
+    }
+
+    // Alerta de tarifa: si la tarifa de energía subió más del 5%
+    if (latest.rate_energia && prev.rate_energia) {
+        const tarifaPct = ((latest.rate_energia - prev.rate_energia) / prev.rate_energia) * 100;
+        if (tarifaPct >= 5) {
+            alerts.push({
+                type: "info",
+                icon: "zap",
+                title: `Tarifa de energía subió ${tarifaPct.toFixed(1)}%`,
+                msg: `Pasó de ${formatCOPWithDecimals(prev.rate_energia)}/kWh a ${formatCOPWithDecimals(latest.rate_energia)}/kWh. Parte del aumento en tu factura se debe a EPM, no a tu consumo.`,
+                severity: "medium"
+            });
+        }
+    }
+
+    return alerts;
+}
+
+function renderAlerts() {
+    const alerts = generateAlerts();
+    const panel = document.getElementById("alerts-panel");
+    const list  = document.getElementById("alerts-list");
+    if (!panel || !list) return;
+
+    if (alerts.length === 0) {
+        panel.style.display = "none";
+        return;
+    }
+
+    panel.style.display = "block";
+    list.innerHTML = alerts.map(a => `
+        <div class="alert-item alert-${a.type} alert-sev-${a.severity}">
+            <i data-lucide="${a.icon}"></i>
+            <div>
+                <strong>${a.title}</strong>
+                <p>${a.msg}</p>
+            </div>
+        </div>
+    `).join("");
+    if (typeof lucide !== "undefined") lucide.createIcons();
+}
+
+// --- PROYECCIÓN PRÓXIMO MES ---
+function renderProyeccion() {
+    const panel = document.getElementById("proyeccion-panel");
+    const content = document.getElementById("proyeccion-content");
+    if (!panel || !content || invoiceHistory.length < 2) {
+        if (panel) panel.style.display = "none";
+        return;
+    }
+
+    // Usar promedio ponderado de los últimos 3 meses
+    const sample = invoiceHistory.slice(-3);
+    const avg = (f) => sample.reduce((s, i) => s + (i[f] || 0), 0) / sample.length;
+
+    const pKwh   = Math.round(avg("kwh"));
+    const pAgua  = Math.round(avg("agua_m3") * 10) / 10;
+    const pGas   = Math.round(avg("gas_m3")  * 10) / 10;
+    const pTotal = Math.round(avg("total"));
+
+    const latest = invoiceHistory[invoiceHistory.length - 1];
+    const diffPct = latest.total ? ((pTotal - latest.total) / latest.total * 100).toFixed(1) : 0;
+    const diffSign = diffPct >= 0 ? "+" : "";
+    const diffClass = diffPct >= 0 ? "proj-up" : "proj-down";
+    const diffIcon  = diffPct >= 0 ? "trending-up" : "trending-down";
+
+    const nextMes = getNextMonthName();
+
+    content.innerHTML = `
+        <div class="proyeccion-grid">
+            <div class="proj-item">
+                <span class="proj-label"><i data-lucide="zap"></i> Energía</span>
+                <span class="proj-value">${pKwh} kWh</span>
+            </div>
+            <div class="proj-item">
+                <span class="proj-label"><i data-lucide="droplet"></i> Agua</span>
+                <span class="proj-value">${pAgua} m³</span>
+            </div>
+            <div class="proj-item">
+                <span class="proj-label"><i data-lucide="flame"></i> Gas</span>
+                <span class="proj-value">${pGas} m³</span>
+            </div>
+            <div class="proj-item proj-total">
+                <span class="proj-label">Estimado ${nextMes}</span>
+                <span class="proj-value proj-total-val">${formatCOP(pTotal)}</span>
+                <span class="proj-diff ${diffClass}"><i data-lucide="${diffIcon}"></i>${diffSign}${diffPct}% vs mes actual</span>
+            </div>
+        </div>
+        <p class="proj-note">Basado en el promedio de los últimos ${sample.length} meses registrados.</p>
+    `;
+
+    panel.style.display = "flex";
+    if (typeof lucide !== "undefined") lucide.createIcons();
+}
+
 function updateDashboardUI() {
-    // Check if the history is completely empty
+    // ── Show/hide empty state ─────────────────────────────────────────────
+    const emptyStateEl = document.getElementById("empty-state");
+    const kpiGrid = document.querySelector(".kpi-grid");
+    const alertsP = document.getElementById("alerts-panel");
+    const proyP = document.getElementById("proyeccion-panel");
+    const infoPanel = document.querySelector(".info-alert-panel");
+
+    if (invoiceHistory.length === 0) {
+        if (emptyStateEl) emptyStateEl.style.display = "flex";
+        if (kpiGrid) kpiGrid.style.display = "none";
+        if (alertsP) alertsP.style.display = "none";
+        if (proyP) proyP.style.display = "none";
+        if (infoPanel) infoPanel.style.display = "none";
+
+        if (el.kpiTotalFactura) el.kpiTotalFactura.innerText = "$0";
+        populateHistoryTable();
+        if (historyChart) { historyChart.destroy(); historyChart = null; }
+        if (distributionChart) { distributionChart.destroy(); distributionChart = null; }
+        if (tariffsChart) { tariffsChart.destroy(); tariffsChart = null; }
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        return;
+    }
+
+    // Has data — show normal UI
+    if (emptyStateEl) emptyStateEl.style.display = "none";
+    if (kpiGrid) kpiGrid.style.display = "";
+    if (infoPanel) infoPanel.style.display = "";
+
     if (invoiceHistory.length === 0) {
         if (el.kpiTotalFactura) el.kpiTotalFactura.innerText = "$0";
         if (el.kpiEnergiaCost) el.kpiEnergiaCost.innerText = "$0";
@@ -546,30 +725,10 @@ function updateDashboardUI() {
         if (el.kpiAguaConsumo) el.kpiAguaConsumo.innerText = "0 m³";
         if (el.kpiGasCost) el.kpiGasCost.innerText = "$0";
         if (el.kpiGasConsumo) el.kpiGasConsumo.innerText = "0 m³";
-        
-        const kpiChangeContainer = document.querySelector(".kpi-change");
-        if (kpiChangeContainer) {
-            kpiChangeContainer.className = "kpi-change";
-            const kpiSpan = kpiChangeContainer.querySelector("span");
-            if (kpiSpan) kpiSpan.innerHTML = "Sin registros en el historial";
-            const kpiIcon = kpiChangeContainer.querySelector("i");
-            if (kpiIcon) kpiIcon.setAttribute("data-lucide", "info");
-        }
-        
-        const expText = document.getElementById("smart-explanation-text");
-        if (expText) expText.innerHTML = "No hay facturas registradas. Por favor haz clic en <strong>Registrar Factura</strong> en la parte superior para comenzar a ingresar los datos reales de tu hogar.";
-        
-        // Update details breakdown to zero
-        updateDetailTabs({ kwh: 0, agua_m3: 0, gas_m3: 0, energia: 0, agua: 0, gas: 0 });
-
-        // Populate table empty placeholder row
         populateHistoryTable();
-
-        // Destroy charts
         if (historyChart) { historyChart.destroy(); historyChart = null; }
         if (distributionChart) { distributionChart.destroy(); distributionChart = null; }
         if (tariffsChart) { tariffsChart.destroy(); tariffsChart = null; }
-
         if (typeof lucide !== 'undefined') lucide.createIcons();
         return;
     }
@@ -617,23 +776,76 @@ function updateDashboardUI() {
     if (el.kpiGasCost) el.kpiGasCost.innerText = formatCOP(latest.gas);
     if (el.kpiGasConsumo) el.kpiGasConsumo.innerText = `${latest.gas_m3} m³`;
 
+    // ── Semáforo en cada KPI card ─────────────────────────────────────────
+    function setSemaforo(cardId, curr, prevVal) {
+        const card = document.getElementById(cardId);
+        if (!card || !prevVal || !curr) return;
+        const pct = ((curr - prevVal) / prevVal) * 100;
+        card.classList.remove("kpi-red","kpi-yellow","kpi-green");
+        const footer = card.querySelector(".kpi-footer .trend-indicator");
+        const sign = pct >= 0 ? "+" : "";
+        const absPct = Math.abs(pct).toFixed(1);
+        const diffCOP = curr - prevVal;
+
+        if (pct >= 10) {
+            card.classList.add("kpi-red");
+            if (footer) footer.innerHTML = `<i data-lucide="arrow-up-right"></i> ${sign}${absPct}% (${formatCOP(diffCOP)})`;
+            if (footer) footer.className = "trend-indicator up";
+        } else if (pct >= 3) {
+            card.classList.add("kpi-yellow");
+            if (footer) footer.innerHTML = `<i data-lucide="arrow-up-right"></i> ${sign}${absPct}% (${formatCOP(diffCOP)})`;
+            if (footer) footer.className = "trend-indicator up";
+        } else if (pct <= -3) {
+            card.classList.add("kpi-green");
+            if (footer) footer.innerHTML = `<i data-lucide="arrow-down-right"></i> ${absPct}% (${formatCOP(diffCOP)})`;
+            if (footer) footer.className = "trend-indicator down";
+        } else {
+            if (footer) footer.innerHTML = `<i data-lucide="minus"></i> Sin cambio significativo`;
+            if (footer) footer.className = "trend-indicator neutral";
+        }
+    }
+    setSemaforo("kpi-card-energia", latest.energia, prev.energia);
+    setSemaforo("kpi-card-agua",    latest.agua,    prev.agua);
+    setSemaforo("kpi-card-gas",     latest.gas,     prev.gas);
+
     // Percentage difference
     const diffPercent = ((latest.total - prev.total) / prev.total * 100).toFixed(1);
     const direction = diffPercent >= 0 ? "+" : "";
     const badgeClass = diffPercent >= 0 ? "bad" : "good";
     const trendIcon = diffPercent >= 0 ? "trending-up" : "trending-down";
+
+    // Update chart annotation badge
+    const chartBadge = document.getElementById("chart-main-badge");
+    if (chartBadge) {
+        chartBadge.textContent = `${direction}${diffPercent}% vs ${prev.mes.split(" ")[0]}`;
+        chartBadge.className = `chart-badge ${diffPercent >= 0 ? "bad" : ""}`;
+        chartBadge.style.display = diffPercent === 0 ? "none" : "";
+    }
     
     const kpiChangeContainer = document.querySelector(".kpi-change");
     if (kpiChangeContainer) {
+        const diffCOP = latest.total - prev.total;
+        const absDiffCOP = Math.abs(diffCOP);
+        const arrow = diffCOP >= 0 ? "▲" : "▼";
         kpiChangeContainer.className = `kpi-change ${badgeClass}`;
-        const kpiSpan = kpiChangeContainer.querySelector("span");
-        if (kpiSpan) {
-            kpiSpan.innerHTML = `<strong>${direction}${diffPercent}%</strong> respecto a ${prev.mes} (${formatCOP(prev.total)})`;
-        }
-        const kpiIcon = kpiChangeContainer.querySelector("i");
-        if (kpiIcon) {
-            kpiIcon.setAttribute("data-lucide", trendIcon);
-        }
+        kpiChangeContainer.innerHTML = `
+            <div class="kpi-compare-row">
+                <div class="kpi-compare-item">
+                    <span class="kpi-compare-label">${prev.mes}</span>
+                    <span class="kpi-compare-val">${formatCOP(prev.total)}</span>
+                </div>
+                <div class="kpi-compare-arrow ${badgeClass}">${arrow}</div>
+                <div class="kpi-compare-item">
+                    <span class="kpi-compare-label">${latest.mes}</span>
+                    <span class="kpi-compare-val kpi-compare-latest">${formatCOP(latest.total)}</span>
+                </div>
+            </div>
+            <div class="kpi-compare-diff ${badgeClass}">
+                <i data-lucide="${trendIcon}"></i>
+                <strong>${direction}${diffPercent}%</strong>
+                &nbsp;·&nbsp; ${diffCOP >= 0 ? "+" : "−"} ${formatCOP(absDiffCOP)} vs mes anterior
+            </div>
+        `;
     }
 
     updateDetailTabs(latest);
@@ -648,134 +860,248 @@ function updateDashboardUI() {
 }
 
 function updateDetailTabs(latest) {
-    const eConf = EPM_CONFIG.energia;
-    const wConf = EPM_CONFIG.acueducto;
+    const eConf  = EPM_CONFIG.energia;
+    const wConf  = EPM_CONFIG.acueducto;
     const alcConf = EPM_CONFIG.alcantarillado;
-    const gConf = EPM_CONFIG.gas;
-    
-    const eMult = eConf.subsidios[currentStratum] > 0 ? (1 - eConf.subsidios[currentStratum]) : (1 + Math.abs(eConf.subsidios[currentStratum]));
-    const wMult = wConf.subsidios[currentStratum] > 0 ? (1 - wConf.subsidios[currentStratum]) : (1 + Math.abs(wConf.subsidios[currentStratum]));
-    const alcMult = alcConf.subsidios[currentStratum] > 0 ? (1 - alcConf.subsidios[currentStratum]) : (1 + Math.abs(alcConf.subsidios[currentStratum]));
-    const gMult = gConf.subsidios[currentStratum] > 0 ? (1 - gConf.subsidios[currentStratum]) : (1 + Math.abs(gConf.subsidios[currentStratum]));
-    
-    // Use either the item specific rates or config rate fallbacks
-    const rEnergia = latest.rate_energia || eConf.tarifa_plena;
-    const rAgua = latest.rate_agua || wConf.tarifa_plena;
+    const gConf  = EPM_CONFIG.gas;
+
+    const mult = (conf) => conf.subsidios[currentStratum] > 0
+        ? 1 - conf.subsidios[currentStratum]
+        : 1 + Math.abs(conf.subsidios[currentStratum]);
+
+    const rEnergia       = latest.rate_energia       || eConf.tarifa_plena;
+    const rAgua          = latest.rate_agua          || wConf.tarifa_plena;
     const rAlcantarillado = latest.rate_alcantarillado || alcConf.tarifa_plena;
-    const rGas = latest.rate_gas || gConf.tarifa_plena;
+    const rGas           = latest.rate_gas           || gConf.tarifa_plena;
 
-    const energyUnitRate = rEnergia;
-    const waterUnitRate = rAgua * wMult;
-    const alcUnitRate = rAlcantarillado * alcMult;
-    const gasUnitRate = rGas * gMult;
-    
+    const wMult   = mult(wConf);
+    const alcMult = mult(alcConf);
+    const gMult   = mult(gConf);
+
     const waterCargoFijo = wConf.cargo_fijo * wMult;
-    const alcCargoFijo = alcConf.cargo_fijo * alcMult;
-    const gasCargoFijo = gConf.cargo_fijo * gMult;
+    const alcCargoFijo   = alcConf.cargo_fijo * alcMult;
+    const gasCargoFijo   = gConf.cargo_fijo * gMult;
 
-    // Energía Details
-    if (el.detailEnergiaConsumo) el.detailEnergiaConsumo.innerText = `${latest.kwh} kWh`;
-    if (el.detailEnergiaTarifa) el.detailEnergiaTarifa.innerText = `${formatCOP(energyUnitRate)} COP`;
-    
+    // ── Helper: build mini rate-bars from history ──────────────────────────
+    function buildRateBars(containerId, items, field, unit, color) {
+        const el2 = document.getElementById(containerId);
+        if (!el2 || items.length === 0) return;
+        const vals = items.map(i => i[field] || 0).filter(v => v > 0);
+        if (vals.length === 0) return;
+        const maxVal = Math.max(...vals);
+        const last3 = items.slice(-5);
+        el2.innerHTML = last3.map((item, idx) => {
+            const val = item[field] || 0;
+            if (!val) return "";
+            const pct = Math.round((val / maxVal) * 100);
+            const isLatest = idx === last3.length - 1;
+            return `
+                <div class="rate-bar-row ${isLatest ? "rate-bar-latest" : ""}">
+                    <span class="rate-bar-mes">${item.mes.split(" ")[0].substring(0,3)} ${item.mes.split(" ")[1]?.slice(-2) || ""}</span>
+                    <div class="rate-bar-track">
+                        <div class="rate-bar-fill" style="width:${pct}%;background:${color}${isLatest ? "" : "80"}"></div>
+                    </div>
+                    <span class="rate-bar-val ${isLatest ? "rate-bar-val-latest" : ""}">${formatCOPWithDecimals(val)}<small>/${unit}</small></span>
+                </div>`;
+        }).join("");
+    }
+
+    // ── Helper: rate diff badge vs previous month ─────────────────────────
+    function rateDiff(current, prev) {
+        if (!prev || !current) return "";
+        const pct = ((current - prev) / prev * 100);
+        const sign = pct >= 0 ? "+" : "";
+        const cls  = pct >= 0 ? "rate-diff-up" : "rate-diff-down";
+        const icon = pct >= 0 ? "▲" : "▼";
+        return `<span class="rate-diff-badge ${cls}">${icon} ${sign}${pct.toFixed(1)}% vs mes anterior</span>`;
+    }
+
+    const prev = invoiceHistory.length > 1 ? invoiceHistory[invoiceHistory.length - 2] : null;
+
+    // ════════════════════════════════════════════════════════════════════════
+    // ENERGÍA
+    // ════════════════════════════════════════════════════════════════════════
+    if (el.detailEnergiaTarifa) el.detailEnergiaTarifa.innerText = formatCOPWithDecimals(rEnergia);
+    const eDiffEl = document.getElementById("energia-rate-diff");
+    if (eDiffEl) eDiffEl.innerHTML = rateDiff(rEnergia, prev?.rate_energia);
+
+    if (el.detailEnergiaConsumo) el.detailEnergiaConsumo.innerText = `${latest.kwh || 0} kWh`;
+    if (el.detailEnergiaAlumbrado) el.detailEnergiaAlumbrado.innerText = formatCOP(EPM_CONFIG.alumbrado);
+    if (el.detailEnergiaTotal) el.detailEnergiaTotal.innerText = formatCOP(latest.energia || 0);
+
     if (el.detailEnergiaSubsidio) {
-        const eSubsidyRate = eConf.subsidios[currentStratum];
-        if (eSubsidyRate > 0) {
-            const subKwh = Math.min(latest.kwh, eConf.limite_subsistencia);
-            const totalSubVal = subKwh * rEnergia * eSubsidyRate;
-            el.detailEnergiaSubsidio.innerText = `Subsidio: ${eSubsidyRate * 100}% sobre ${subKwh} kWh (${formatCOP(totalSubVal)} COP)`;
+        const sr = eConf.subsidios[currentStratum];
+        if (sr > 0) {
+            const subKwh = Math.min(latest.kwh || 0, eConf.limite_subsistencia);
+            el.detailEnergiaSubsidio.innerText = `Subsidio ${sr*100}% · ${subKwh} kWh · ahorro ${formatCOP(subKwh * rEnergia * sr)}`;
             el.detailEnergiaSubsidio.className = "value badge text-success";
-        } else if (eSubsidyRate < 0) {
-            const contribVal = latest.kwh * rEnergia * Math.abs(eSubsidyRate);
-            el.detailEnergiaSubsidio.innerText = `Contribución Solidaridad: +${Math.abs(eSubsidyRate) * 100}% (+${formatCOP(contribVal)} COP)`;
+        } else if (sr < 0) {
+            el.detailEnergiaSubsidio.innerText = `Contribución solidaridad +${Math.abs(sr)*100}%`;
             el.detailEnergiaSubsidio.className = "value badge text-yellow";
         } else {
-            el.detailEnergiaSubsidio.innerText = `Sin Subsidio / Contribución`;
+            el.detailEnergiaSubsidio.innerText = "Sin subsidio ni contribución (Estrato 4)";
             el.detailEnergiaSubsidio.className = "value badge neutral";
         }
     }
-    if (el.detailEnergiaAlumbrado) el.detailEnergiaAlumbrado.innerText = `${formatCOP(EPM_CONFIG.alumbrado)} COP`;
-    if (el.detailEnergiaTotal) el.detailEnergiaTotal.innerText = `${formatCOP(latest.energia || 0)} COP`;
 
-    // Agua Details
-    if (el.detailAguaConsumo) el.detailAguaConsumo.innerText = `${latest.agua_m3} m³`;
-    if (el.detailAguaCargoFijo) el.detailAguaCargoFijo.innerText = `${formatCOP(waterCargoFijo)} COP`;
-    if (el.detailAguaTarifaAcueducto) el.detailAguaTarifaAcueducto.innerText = `${formatCOP(waterUnitRate)} COP`;
-    if (el.detailAguaCargoFijoAlc) el.detailAguaCargoFijoAlc.innerText = `${formatCOP(alcCargoFijo)} COP`;
-    if (el.detailAguaTarifaAlcantarillado) el.detailAguaTarifaAlcantarillado.innerText = `${formatCOP(alcUnitRate)} COP`;
-    if (el.detailAguaTotal) el.detailAguaTotal.innerText = `${formatCOP(latest.agua || 0)} COP`;
-    
+    buildRateBars("energia-rate-bars", invoiceHistory, "rate_energia", "kWh", "var(--yellow)");
+
+    const eTrendDesc = document.getElementById("energia-trend-desc");
+    if (eTrendDesc && prev?.rate_energia) {
+        const pct = ((rEnergia - prev.rate_energia) / prev.rate_energia * 100);
+        eTrendDesc.innerHTML = pct >= 0
+            ? `La tarifa de energía <strong>subió ${pct.toFixed(1)}%</strong> vs el mes anterior. Parte del aumento en tu factura se debe a EPM, no a tu consumo.`
+            : `La tarifa de energía <strong>bajó ${Math.abs(pct).toFixed(1)}%</strong> vs el mes anterior. ¡Buenas noticias!`;
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // AGUA
+    // ════════════════════════════════════════════════════════════════════════
+    if (el.detailAguaTarifaAcueducto) el.detailAguaTarifaAcueducto.innerText = formatCOPWithDecimals(rAgua * wMult);
+    const wDiffEl = document.getElementById("agua-rate-diff");
+    if (wDiffEl) wDiffEl.innerHTML = rateDiff(rAgua, prev?.rate_agua);
+
+    if (el.detailAguaConsumo) el.detailAguaConsumo.innerText = `${latest.agua_m3 || 0} m³`;
+    if (el.detailAguaCargoFijo) el.detailAguaCargoFijo.innerText = formatCOP(waterCargoFijo);
+    if (el.detailAguaTarifaAlcantarillado) el.detailAguaTarifaAlcantarillado.innerText = formatCOPWithDecimals(rAlcantarillado * alcMult);
+    if (el.detailAguaCargoFijoAlc) el.detailAguaCargoFijoAlc.innerText = formatCOP(alcCargoFijo);
+    if (el.detailAguaTotal) el.detailAguaTotal.innerText = formatCOP(latest.agua || 0);
+
+    // Gauge
     if (el.waterGaugeBar) {
-        const waterPercent = Math.min((latest.agua_m3 / 20) * 100, 100);
-        el.waterGaugeBar.style.width = `${waterPercent}%`;
-        const marker = document.querySelector(".gauge-marker");
-        if (marker) {
-            marker.style.left = `${(wConf.limite_basico / 20) * 100}%`;
+        const maxGauge = Math.max((latest.agua_m3 || 0) * 1.5, 20);
+        const pct = Math.min(((latest.agua_m3 || 0) / maxGauge) * 100, 100);
+        const limitPct = Math.min((wConf.limite_basico / maxGauge) * 100, 100);
+        el.waterGaugeBar.style.width = `${pct}%`;
+        el.waterGaugeBar.style.background = (latest.agua_m3 || 0) > wConf.limite_basico
+            ? "var(--red)" : "var(--blue)";
+        const marker = document.getElementById("agua-gauge-marker");
+        if (marker) marker.style.left = `${limitPct}%`;
+        const markerLabel = document.getElementById("agua-gauge-marker-label");
+        if (markerLabel) markerLabel.innerText = `${wConf.limite_basico} m³ (subsidiado)`;
+        const gaugeText = document.getElementById("agua-gauge-text");
+        if (gaugeText) {
+            const over = (latest.agua_m3 || 0) - wConf.limite_basico;
+            gaugeText.innerHTML = over > 0
+                ? `<span style="color:var(--red)">${latest.agua_m3} m³ · excede ${over.toFixed(1)} m³ del límite</span>`
+                : `<span style="color:var(--green)">${latest.agua_m3} m³ · dentro del límite subsidiado</span>`;
+        }
+        const maxLabel = document.getElementById("agua-gauge-max");
+        if (maxLabel) maxLabel.innerText = `${Math.round(maxGauge)} m³`;
+    }
+
+    buildRateBars("agua-rate-bars", invoiceHistory, "rate_agua", "m³", "var(--blue)");
+
+    // ════════════════════════════════════════════════════════════════════════
+    // GAS
+    // ════════════════════════════════════════════════════════════════════════
+    if (el.detailGasTarifa) el.detailGasTarifa.innerText = formatCOPWithDecimals(rGas * gMult);
+    const gDiffEl = document.getElementById("gas-rate-diff");
+    if (gDiffEl) gDiffEl.innerHTML = rateDiff(rGas, prev?.rate_gas);
+
+    if (el.detailGasConsumo) el.detailGasConsumo.innerText = `${latest.gas_m3 || 0} m³`;
+    if (el.detailGasCargoFijo) el.detailGasCargoFijo.innerText = formatCOP(gasCargoFijo);
+    if (el.detailGasTotal) el.detailGasTotal.innerText = formatCOP(latest.gas || 0);
+
+    buildRateBars("gas-rate-bars", invoiceHistory, "rate_gas", "m³", "var(--orange,#f97316)");
+
+    // Gas efficiency badge
+    const gEff = document.getElementById("gas-eff-title");
+    const gMsg = document.getElementById("gas-eff-msg");
+    const gIcon = document.getElementById("gas-eff-icon");
+    if (gEff && gMsg && latest.gas_m3) {
+        const m3 = latest.gas_m3;
+        const avg3 = invoiceHistory.slice(-4,-1).reduce((s,i) => s+(i.gas_m3||0), 0) / Math.max(invoiceHistory.slice(-4,-1).length, 1);
+        const pct = avg3 > 0 ? ((m3 - avg3) / avg3 * 100) : 0;
+        if (m3 <= 10) {
+            gEff.innerText = "¡Consumo eficiente!";
+            gMsg.innerText = `${m3} m³ está dentro del rango óptimo para hogares en Medellín (hasta 10 m³).`;
+            if (gIcon) gIcon.setAttribute("data-lucide","thumbs-up");
+        } else if (pct > 15) {
+            gEff.innerText = `Consumo alto este mes (+${pct.toFixed(0)}%)`;
+            gMsg.innerText = `${m3} m³ supera tu promedio de ${avg3.toFixed(1)} m³. Revisa calentador o estufas.`;
+            if (gIcon) gIcon.setAttribute("data-lucide","alert-triangle");
+        } else {
+            gEff.innerText = "Consumo normal";
+            gMsg.innerText = `${m3} m³ es similar a tus meses anteriores (promedio ${avg3.toFixed(1)} m³).`;
+            if (gIcon) gIcon.setAttribute("data-lucide","check-circle");
         }
     }
 
-    // Gas Details
-    if (el.detailGasConsumo) el.detailGasConsumo.innerText = `${latest.gas_m3} m³`;
-    if (el.detailGasCargoFijo) el.detailGasCargoFijo.innerText = `${formatCOP(gasCargoFijo)} COP`;
-    if (el.detailGasTarifa) el.detailGasTarifa.innerText = `${formatCOP(gasUnitRate)} COP`;
-    if (el.detailGasTotal) el.detailGasTotal.innerText = `${formatCOP(latest.gas || 0)} COP`;
+    const gTrendDesc = document.getElementById("gas-trend-desc");
+    if (gTrendDesc && prev?.rate_gas) {
+        const pct = ((rGas - prev.rate_gas) / prev.rate_gas * 100);
+        gTrendDesc.innerHTML = pct >= 0
+            ? `Tarifa de gas <strong>subió ${pct.toFixed(1)}%</strong> vs mes anterior.`
+            : `Tarifa de gas <strong>bajó ${Math.abs(pct).toFixed(1)}%</strong> vs mes anterior.`;
+    }
+
+    if (typeof lucide !== "undefined") lucide.createIcons();
 }
 
 // --- GENERATE SMART EXPLANATION FOR DASHBOARD ---
 function generateSmartExplanation(latest, prev) {
     const expText = document.getElementById("smart-explanation-text");
+    const panelTitle = document.querySelector(".info-alert-panel h3");
     if (!expText) return;
 
-    const totalDiff = latest.total - prev.total;
-    const diffPercent = ((latest.total - prev.total) / prev.total * 100).toFixed(1);
-    const trendText = diffPercent >= 0 ? "incrementó" : "disminuyó";
-    
-    // Find the main driver of cost change
-    const eDiff = (latest.energia || 0) - (prev.energia || 0);
-    const wDiff = (latest.agua || 0) - (prev.agua || 0);
-    const gDiff = (latest.gas || 0) - (prev.gas || 0);
-    const oDiff = (latest.otros || 0) - (prev.otros || 0);
+    const diffTotal = latest.total - prev.total;
+    const pctTotal  = ((diffTotal / prev.total) * 100).toFixed(1);
+    const sign      = diffTotal >= 0 ? "+" : "−";
+    const absDiff   = Math.abs(diffTotal);
 
-    let drivers = [];
-    if (Math.abs(eDiff) > 1000) {
-        drivers.push({ name: "Energía (Luz)", diff: eDiff, abs: Math.abs(eDiff) });
-    }
-    if (Math.abs(wDiff) > 1000) {
-        drivers.push({ name: "Agua + Alcantarillado", diff: wDiff, abs: Math.abs(wDiff) });
-    }
-    if (Math.abs(gDiff) > 1000) {
-        drivers.push({ name: "Gas Natural", diff: gDiff, abs: Math.abs(gDiff) });
-    }
-    if (Math.abs(oDiff) > 1000) {
-        drivers.push({ name: "Aseo & Otros", diff: oDiff, abs: Math.abs(oDiff) });
-    }
+    // Find biggest driver of change
+    const services = [
+        { name: "Energía",      curr: latest.energia, prev: prev.energia, icon: "⚡" },
+        { name: "Agua",         curr: latest.agua,    prev: prev.agua,    icon: "💧" },
+        { name: "Gas",          curr: latest.gas,     prev: prev.gas,     icon: "🔥" },
+        { name: "Otros",        curr: latest.otros,   prev: prev.otros,   icon: "🏠" },
+    ].filter(s => s.prev > 0).map(s => ({
+        ...s,
+        diff: s.curr - s.prev,
+        pct: ((s.curr - s.prev) / s.prev * 100).toFixed(1)
+    })).sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff));
 
-    drivers.sort((a, b) => b.abs - a.abs);
+    const main = services[0];
+    const isUp = diffTotal >= 0;
 
-    let explanation = `Tu factura general <strong>${trendText} un ${Math.abs(diffPercent)}%</strong> (${formatCOP(Math.abs(totalDiff))} COP) en comparación con el mes anterior (${prev.mes}). `;
-
-    if (drivers.length > 0) {
-        const mainDriver = drivers[0];
-        const driverTrend = mainDriver.diff >= 0 ? "un aumento" : "una reducción";
-        explanation += `El principal factor de cambio fue el servicio de <strong>${mainDriver.name}</strong> con ${driverTrend} de <strong>${formatCOP(Math.abs(mainDriver.diff))} COP</strong>. `;
-        
-        if (drivers.length > 1) {
-            const secDriver = drivers[1];
-            const secTrend = secDriver.diff >= 0 ? "aumentó" : "disminuyó";
-            explanation += `Seguido por el servicio de <strong>${secDriver.name}</strong>, el cual ${secTrend} <strong>${formatCOP(Math.abs(secDriver.diff))} COP</strong>. `;
-        }
-    } else {
-        explanation += `No se detectaron variaciones significativas en los consumos individuales de los servicios públicos este mes.`;
+    // Update panel title
+    if (panelTitle) {
+        panelTitle.textContent = isUp
+            ? "¿Por qué subió tu factura este mes?"
+            : "¿Por qué bajó tu factura este mes?";
     }
 
-    expText.innerHTML = explanation;
+    // Build service breakdown lines
+    const lines = services.map(s => {
+        const sSign = s.diff >= 0 ? "+" : "−";
+        const sPct  = Math.abs(parseFloat(s.pct));
+        const color = s.diff >= 5000 ? "var(--red)" : s.diff <= -5000 ? "var(--green)" : "var(--text-muted)";
+        const arrow = s.diff >= 500 ? "▲" : s.diff <= -500 ? "▼" : "→";
+        return `<span class="why-svc" style="border-left:3px solid ${color}">
+            ${s.icon} <strong>${s.name}</strong>
+            <span class="why-svc-diff" style="color:${color}">${arrow} ${sSign}${formatCOP(Math.abs(s.diff))} (${sSign}${sPct}%)</span>
+        </span>`;
+    }).join("");
+
+    // Main explanation text
+    let mainText = "";
+    if (Math.abs(parseFloat(pctTotal)) < 2) {
+        mainText = `Tu factura se mantuvo estable — varió solo <strong>${sign}${formatCOP(absDiff)}</strong> (${sign}${Math.abs(parseFloat(pctTotal))}%) respecto a ${prev.mes}.`;
+    } else if (main) {
+        const mainPct = Math.abs(parseFloat(main.pct));
+        const mainSign = main.diff >= 0 ? "subió" : "bajó";
+        mainText = isUp
+            ? `Tu factura subió <strong>${formatCOP(absDiff)}</strong> (<strong style="color:var(--red)">${sign}${pctTotal}%</strong>) vs ${prev.mes}. El principal responsable fue <strong>${main.icon} ${main.name}</strong>, que ${mainSign} <strong>${formatCOP(Math.abs(main.diff))}</strong> (${Math.abs(parseFloat(main.pct)).toFixed(1)}%).`
+            : `Tu factura bajó <strong>${formatCOP(absDiff)}</strong> (<strong style="color:var(--green)">${sign}${Math.abs(parseFloat(pctTotal))}%</strong>) vs ${prev.mes}. El mayor ahorro vino de <strong>${main.icon} ${main.name}</strong> con <strong>${formatCOP(Math.abs(main.diff))}</strong> menos.`;
+    }
+
+    expText.innerHTML = `
+        <p style="margin-bottom:1rem;line-height:1.7">${mainText}</p>
+        <div class="why-services">${lines}</div>
+    `;
 }
 
-function updateTariffTabKPIs(latest) {
-    if (el.rateKpiEnergia) el.rateKpiEnergia.innerText = `${formatCOPWithDecimals(latest.rate_energia)} / kWh`;
-    if (el.rateKpiAgua) el.rateKpiAgua.innerText = `${formatCOPWithDecimals(latest.rate_agua)} / m³`;
-    if (el.rateKpiAlcantarillado) el.rateKpiAlcantarillado.innerText = `${formatCOPWithDecimals(latest.rate_alcantarillado)} / m³`;
-    if (el.rateKpiGas) el.rateKpiGas.innerText = `${formatCOPWithDecimals(latest.rate_gas)} / m³`;
-}
 
 // --- POPULATE TABLE ---
 function populateHistoryTable() {
@@ -797,15 +1123,66 @@ function populateHistoryTable() {
 
     for (let i = invoiceHistory.length - 1; i >= 0; i--) {
         const item = invoiceHistory[i];
+        const prev = i > 0 ? invoiceHistory[i - 1] : null;
+
+        // Row color based on variation vs previous month
+        let rowClass = "";
+        let totalBadge = "";
+        if (prev && prev.total) {
+            const pct = ((item.total - prev.total) / prev.total) * 100;
+            const sign = pct >= 0 ? "+" : "";
+            const absPct = Math.abs(pct).toFixed(1);
+            if (pct >= 10) {
+                rowClass = "row-danger";
+                totalBadge = `<span class="table-diff-badge badge-up">▲ ${sign}${absPct}%</span>`;
+            } else if (pct >= 3) {
+                rowClass = "row-warning";
+                totalBadge = `<span class="table-diff-badge badge-warn">▲ ${sign}${absPct}%</span>`;
+            } else if (pct <= -5) {
+                rowClass = "row-success";
+                totalBadge = `<span class="table-diff-badge badge-down">▼ ${absPct}%</span>`;
+            } else {
+                totalBadge = `<span class="table-diff-badge badge-neutral">${sign}${absPct}%</span>`;
+            }
+        }
+
+        // Per-service diff indicators
+        function svcDiff(curr, prevVal) {
+            if (!prevVal || !curr) return "";
+            const p = ((curr - prevVal) / prevVal * 100).toFixed(0);
+            if (p >= 10) return `<span class="svc-diff up">▲${p}%</span>`;
+            if (p <= -5) return `<span class="svc-diff down">▼${Math.abs(p)}%</span>`;
+            return "";
+        }
+
         const row = document.createElement("tr");
+        row.className = rowClass;
         row.innerHTML = `
-            <td><strong>${item.mes}</strong></td>
-            <td><strong>${formatCOP(item.total)}</strong></td>
-            <td>${formatCOP(item.energia)} <span class="text-sm text-muted">(${item.kwh} kWh)</span></td>
-            <td>${formatCOP(item.agua)} <span class="text-sm text-muted">(${item.agua_m3} m³)</span></td>
-            <td>${formatCOP(item.gas)} <span class="text-sm text-muted">(${item.gas_m3} m³)</span></td>
+            <td>
+                <strong>${item.mes}</strong>
+                ${i === invoiceHistory.length - 1 ? '<span class="badge-latest">Último</span>' : ""}
+            </td>
+            <td>
+                <strong class="total-cell">${formatCOP(item.total)}</strong>
+                <div style="margin-top:3px">${totalBadge}</div>
+            </td>
+            <td>
+                ${formatCOP(item.energia)}
+                ${svcDiff(item.energia, prev?.energia)}
+                <div class="cell-sub">${item.kwh || "—"} kWh</div>
+            </td>
+            <td>
+                ${formatCOP(item.agua)}
+                ${svcDiff(item.agua, prev?.agua)}
+                <div class="cell-sub">${item.agua_m3 || "—"} m³</div>
+            </td>
+            <td>
+                ${formatCOP(item.gas)}
+                ${svcDiff(item.gas, prev?.gas)}
+                <div class="cell-sub">${item.gas_m3 || "—"} m³</div>
+            </td>
             <td>${formatCOP(item.otros)}</td>
-            <td><span class="status-badge pago">${item.estado}</span></td>
+            <td><span class="status-badge pago">${item.estado || "—"}</span></td>
             <td class="action-cell">
                 <button class="btn-delete" data-index="${i}" title="Eliminar este mes">
                     <i data-lucide="trash-2"></i>
@@ -831,6 +1208,9 @@ function populateHistoryTable() {
     });
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    renderAlerts();
+    renderProyeccion();
 }
 
 // --- CHART RENDERING (Chart.js) ---
@@ -1111,9 +1491,13 @@ function renderCharts() {
 
 // --- REGISTRATION & IMPORT FLOW (MANUAL FORM AND PDF) ---
 function setupImportFlow() {
-    if (!el.modalImport || !el.btnCloseModal) return;
+    if (!el.btnImportarFactura || !el.modalImport || !el.btnCloseModal) return;
 
-    // El botón #btn-importar-factura se maneja por delegación global en initApp.
+    // Show modal
+    el.btnImportarFactura.addEventListener("click", () => {
+        el.modalImport.classList.add("open");
+        resetImportModal();
+    });
 
     // Close modal
     el.btnCloseModal.addEventListener("click", () => {
@@ -1471,6 +1855,131 @@ function extractEPMData(rawText) {
     console.table(result);
     return result;
 }
+
+// --- EXPORTAR RESUMEN PDF ---
+function exportToPDF() {
+    if (invoiceHistory.length === 0) {
+        showToast("No hay datos para exportar.", "warning");
+        return;
+    }
+
+    const latest  = invoiceHistory[invoiceHistory.length - 1];
+    const prev    = invoiceHistory.length > 1 ? invoiceHistory[invoiceHistory.length - 2] : null;
+    const alerts  = generateAlerts();
+    const sample  = invoiceHistory.slice(-3);
+    const avg     = (f) => sample.reduce((s, i) => s + (i[f] || 0), 0) / sample.length;
+    const pTotal  = Math.round(avg("total"));
+    const nextMes = getNextMonthName();
+
+    const diffLine = prev
+        ? `vs mes anterior: ${((latest.total - prev.total) / prev.total * 100).toFixed(1)}%`
+        : "";
+
+    const alertsHtml = alerts.length
+        ? alerts.map(a => `<tr><td style="padding:4px 8px">${a.title}</td><td style="padding:4px 8px;color:#555">${a.msg}</td></tr>`).join("")
+        : '<tr><td colspan="2" style="padding:4px 8px;color:#888">Sin alertas este mes.</td></tr>';
+
+    const histRows = invoiceHistory.slice().reverse().slice(0, 12).map(item => `
+        <tr>
+            <td>${item.mes}</td>
+            <td>${item.kwh || "—"} kWh</td>
+            <td>${item.agua_m3 || "—"} m³</td>
+            <td>${item.gas_m3 || "—"} m³</td>
+            <td style="font-weight:600">${formatCOP(item.total)}</td>
+        </tr>`).join("");
+
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Resumen EPM — ${latest.mes}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: Arial, sans-serif; color: #1e293b; padding: 2rem; font-size: 13px; }
+  h1 { font-size: 1.4rem; color: #0f766e; margin-bottom: 0.25rem; }
+  .subtitle { color: #64748b; font-size: 0.85rem; margin-bottom: 1.5rem; }
+  .section { margin-bottom: 1.5rem; }
+  h2 { font-size: 1rem; color: #0f766e; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; margin-bottom: 0.75rem; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #f1f5f9; text-align: left; padding: 6px 8px; font-size: 12px; color: #475569; }
+  td { padding: 5px 8px; border-bottom: 1px solid #f1f5f9; }
+  .kpi-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .kpi-box { flex: 1; min-width: 120px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem; }
+  .kpi-box .label { font-size: 11px; color: #64748b; margin-bottom: 4px; }
+  .kpi-box .value { font-size: 1.1rem; font-weight: 700; color: #0f766e; }
+  .kpi-box .sub   { font-size: 11px; color: #94a3b8; }
+  .alert-row td { background: #fffbeb; }
+  .footer { margin-top: 2rem; font-size: 11px; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 1rem; }
+</style>
+</head>
+<body>
+  <h1>📋 Resumen de Facturas EPM</h1>
+  <p class="subtitle">Generado el ${new Date().toLocaleDateString("es-CO", {day:"2-digit",month:"long",year:"numeric"})} · Estrato ${currentStratum} · Último periodo: ${latest.mes}</p>
+
+  <div class="section">
+    <h2>Última factura — ${latest.mes}</h2>
+    <div class="kpi-row">
+      <div class="kpi-box">
+        <div class="label">Total a pagar</div>
+        <div class="value">${formatCOP(latest.total)}</div>
+        <div class="sub">${diffLine}</div>
+      </div>
+      <div class="kpi-box">
+        <div class="label">Energía</div>
+        <div class="value">${formatCOP(latest.energia)}</div>
+        <div class="sub">${latest.kwh || "—"} kWh</div>
+      </div>
+      <div class="kpi-box">
+        <div class="label">Agua + Alcantarillado</div>
+        <div class="value">${formatCOP(latest.agua)}</div>
+        <div class="sub">${latest.agua_m3 || "—"} m³</div>
+      </div>
+      <div class="kpi-box">
+        <div class="label">Gas</div>
+        <div class="value">${formatCOP(latest.gas)}</div>
+        <div class="sub">${latest.gas_m3 || "—"} m³</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Alertas del mes</h2>
+    <table>
+      <thead><tr><th>Alerta</th><th>Detalle</th></tr></thead>
+      <tbody class="alert-row">${alertsHtml}</tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Proyección — ${nextMes}</h2>
+    <p>Estimado basado en los últimos ${sample.length} meses: <strong>${formatCOP(pTotal)}</strong></p>
+  </div>
+
+  <div class="section">
+    <h2>Historial (últimos 12 meses)</h2>
+    <table>
+      <thead><tr><th>Periodo</th><th>Energía</th><th>Agua</th><th>Gas</th><th>Total</th></tr></thead>
+      <tbody>${histRows}</tbody>
+    </table>
+  </div>
+
+  <div class="footer">Generado por EPM Comparador de Facturas · Solo para uso personal</div>
+</body>
+</html>`;
+
+    const win = window.open("", "_blank");
+    if (!win) {
+        showToast("Permite ventanas emergentes para exportar el PDF.", "warning", 5000);
+        return;
+    }
+    win.document.write(html);
+    win.document.close();
+    win.onload = () => {
+        win.print();
+        showToast("Usa Ctrl+P → Guardar como PDF para descargar.", "info", 6000);
+    };
+}
+
 // --- EXPORT HISTORY TO CSV ---
 function exportToCSV() {
     if (invoiceHistory.length === 0) {
@@ -1560,6 +2069,15 @@ async function parsePdfLocal(file) {
     console.log("Texto extraído del PDF:\n", fullText);
     const parsed = extractEPMData(fullText);
     showPdfDebugPanel(fullText, parsed);
+
+    // Auto-copy raw text to clipboard so user can paste it for debugging
+    try {
+        await navigator.clipboard.writeText(fullText);
+        showToast("Texto del PDF copiado al portapapeles — pégalo en el chat para diagnóstico.", "info", 5000);
+    } catch(e) {
+        // clipboard not available, that's ok
+    }
+
     return parsed;
 }
 
