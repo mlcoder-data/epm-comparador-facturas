@@ -1659,12 +1659,19 @@ function resetImportModal() {
 
 // --- PDF PARSING VIA PDF.js (sin API, funciona offline) ---
 async function loadPdfJs() {
-    if (window.pdfjsLib) return window.pdfjsLib;
+    // If already loaded via <head> script tag, just configure the worker
+    if (window.pdfjsLib) {
+        if (!window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+                "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+        }
+        return window.pdfjsLib;
+    }
+    // Fallback: load dynamically
     return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
             reject(new Error("Tiempo de espera agotado cargando PDF.js. Verifica tu conexión a internet."));
-        }, 12000);
-
+        }, 15000);
         const script = document.createElement("script");
         script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
         script.onload = () => {
@@ -1675,7 +1682,7 @@ async function loadPdfJs() {
         };
         script.onerror = () => {
             clearTimeout(timeout);
-            reject(new Error("No se pudo cargar PDF.js desde la CDN"));
+            reject(new Error("No se pudo cargar PDF.js desde la CDN. Verifica tu conexión."));
         };
         document.head.appendChild(script);
     });
@@ -2017,42 +2024,6 @@ function exportToCSV() {
 }
 
 // --- PDF DEBUG PANEL (muestra texto crudo extraído para diagnóstico) ---
-function showPdfDebugPanel(rawText, parsed) {
-    let panel = document.getElementById("pdf-debug-panel");
-    if (!panel) {
-        panel = document.createElement("div");
-        panel.id = "pdf-debug-panel";
-        panel.style.cssText = `
-            position: fixed; bottom: 1rem; left: 1rem; right: 1rem; max-height: 40vh;
-            background: #0f172a; border: 1px solid rgba(16,185,129,0.3);
-            border-radius: 12px; padding: 1rem 1.25rem; overflow-y: auto;
-            z-index: 9000; font-family: monospace; font-size: 0.75rem; color: #94a3b8;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-        `;
-        document.body.appendChild(panel);
-    }
-    const fields = ["periodo","estrato","kwh","agua_m3","gas_m3",
-                    "total_energia","total_agua","total_alcantarillado","total_gas",
-                    "total_aseo","total_alumbrado","total_factura",
-                    "rate_energia","rate_agua","rate_alcantarillado","rate_gas"];
-    const rows = fields.map(f => {
-        const v = parsed[f];
-        const ok = v !== null && v !== undefined && v !== 0;
-        const color = ok ? "#10b981" : "#ef4444";
-        return `<div><span style="color:${color}; font-weight:bold">${f}</span>: ${v ?? "—"}</div>`;
-    }).join("");
-    panel.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
-            <span style="color:#f8fafc;font-weight:700;font-size:0.85rem">🔍 Diagnóstico PDF extraído</span>
-            <button onclick="document.getElementById('pdf-debug-panel').remove()" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:1rem">✕</button>
-        </div>
-        ${rows}
-        <details style="margin-top:0.75rem">
-            <summary style="cursor:pointer;color:#10b981;font-weight:600">Ver texto crudo del PDF</summary>
-            <pre style="margin-top:0.5rem;white-space:pre-wrap;word-break:break-all;color:#64748b;font-size:0.7rem;max-height:200px;overflow-y:auto">${rawText.slice(0, 3000)}</pre>
-        </details>
-    `;
-}
 
 async function parsePdfLocal(file) {
     const pdfjsLib = await loadPdfJs();
@@ -2066,18 +2037,7 @@ async function parsePdfLocal(file) {
         fullText += textContent.items.map(item => item.str).join(" ") + "\n";
     }
 
-    console.log("Texto extraído del PDF:\n", fullText);
     const parsed = extractEPMData(fullText);
-    showPdfDebugPanel(fullText, parsed);
-
-    // Auto-copy raw text to clipboard so user can paste it for debugging
-    try {
-        await navigator.clipboard.writeText(fullText);
-        showToast("Texto del PDF copiado al portapapeles — pégalo en el chat para diagnóstico.", "info", 5000);
-    } catch(e) {
-        // clipboard not available, that's ok
-    }
-
     return parsed;
 }
 
@@ -2139,7 +2099,15 @@ async function simulateUpload(file) {
         if (el.uploadStatus) el.uploadStatus.style.display = "none";
         if (el.dropZone) el.dropZone.style.display = "block";
         lastParsedPdfData = null;
-        showToast(`No se pudo leer el PDF: ${err.message}`, "error", 6000);
+        let msg = err.message || "Error desconocido";
+        if (msg.includes("CDN") || msg.includes("cargar PDF")) {
+            msg = "No se pudo cargar PDF.js. Verifica tu conexión a internet.";
+        } else if (msg.includes("Tiempo de espera")) {
+            msg = "Tiempo de espera agotado. Verifica tu conexión e intenta de nuevo.";
+        } else if (msg.includes("password") || msg.includes("encrypted")) {
+            msg = "El PDF está protegido con contraseña. Descárgalo sin contraseña.";
+        }
+        showToast(`Error al leer el PDF: ${msg}`, "error", 7000);
     }
 }
 
